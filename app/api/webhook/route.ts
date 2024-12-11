@@ -92,8 +92,8 @@ export async function POST(req: Request) {
         subject: "Your Travel Guide is Ready!",
         html: `
           <p>Hi ${userName},</p>
-          <p>Your travel guide is ready! You can download it using the link below:</p>
-          <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/pdfs/${pdfPath}">Download Guide</a></p>
+          <p>Your travel guide is ready! You can access it using the link below:</p>
+          <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/${user._id}">Access Your Dashboard</a></p>
         `,
       });
 
