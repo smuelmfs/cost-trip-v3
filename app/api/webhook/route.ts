@@ -4,7 +4,6 @@ import connectDB from "@/lib/mongodb";
 import User from "../../models/User";
 import { Resend } from "resend";
 import { generateDetailedGuide } from "@/lib/openai";
-import { generatePDF } from "@/lib/pdf";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2024-11-20.acacia",
@@ -18,21 +17,14 @@ export async function POST(req: Request) {
   let event;
 
   try {
-    // Verificar assinatura do webhook
     event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_SECRET_WEBHOOK!);
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      console.error("Webhook signature verification failed.", err.message);
-    } else {
-      console.error("Webhook signature verification failed.", err); // Handle non-Error cases
-    }
+  } catch (err) {
+    console.error("Webhook signature verification failed.", err);
     return new Response("Webhook Error", { status: 400 });
   }
 
-  // Processar evento de pagamento confirmado
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-
     const metadata = session.metadata!;
     const {
       userName,
@@ -41,51 +33,39 @@ export async function POST(req: Request) {
       days,
       people,
       travelStyle,
-      includeTransport: includeTransportString,
+      includeTransport,
       transportType,
-      includeMeals: includeMealsString,
+      includeMeals,
     } = metadata;
 
-    // Convert includeTransport and includeMeals to boolean
-    const includeTransport = includeTransportString === 'true';
-    const includeMeals = includeMealsString === 'true';
-
     try {
+      console.log("Received session metadata:", metadata);
+
       // Conectar ao MongoDB
       await connectDB();
+      console.log("Connected to MongoDB.");
 
-      // Gerar conteúdo detalhado com a OpenAI
+      // Gerar conteúdo com OpenAI
       const documentContent = await generateDetailedGuide({
         userName,
         destination,
         days,
         people,
         travelStyle,
-        includeTransport,
+        includeTransport: includeTransport === "true",
         transportType,
-        includeMeals,
+        includeMeals: includeMeals === "true",
       });
-
-      // Gerar PDF com o conteúdo gerado
-      const pdfPath = await generatePDF(documentContent, `travel-guide-${session.id}`);
 
       // Salvar no banco de dados
       const user = await User.create({
         email: userEmail,
-        data: {
-          userName,
-          destination,
-          days,
-          people,
-          travelStyle,
-          includeTransport,
-          transportType,
-          includeMeals,
-        },
-        documentUrl: pdfPath,
+        data: metadata,
+        documentContent,
       });
+      console.log("Saved user to MongoDB:", user);
 
-      // Enviar e-mail com o link para o PDF
+      // Enviar e-mail com link para o dashboard
       await resend.emails.send({
         from: process.env.FROM_EMAIL!,
         to: userEmail,
@@ -96,13 +76,11 @@ export async function POST(req: Request) {
           <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/${user._id}">Access Your Dashboard</a></p>
         `,
       });
-
-      console.log("Webhook processed successfully.");
+      console.log("Email sent to:", userEmail);
     } catch (err) {
       console.error("Error processing webhook:", err);
       return new Response("Webhook Processing Error", { status: 500 });
     }
   }
-
   return NextResponse.json({ received: true });
 }
