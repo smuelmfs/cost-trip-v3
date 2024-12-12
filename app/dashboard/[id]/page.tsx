@@ -10,8 +10,16 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { CheckSquare, List, MapPin, Plane } from "lucide-react";
 
+// Define the interface for document content
+interface DocumentContent {
+  itinerary: any;
+  practicalInfo: any;
+  cultureEtiquette: any;
+  emergency: any;
+}
+
 export default function DashboardPage({ params }: { params: { id: string } }) {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{ data: any; documentContent: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGuide, setShowGuide] = useState(false); // Controle do toggle
   const router = useRouter();
@@ -36,17 +44,44 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
   if (loading) return <div>Loading...</div>;
   if (!userData) return <div>No data found for this user.</div>;
 
-  const {
-    userName,
-    destination,
-    days,
-    people,
-    travelStyle,
-    includeTransport,
-    transportType,
-    includeMeals,
-    documentContent,
-  } = userData.data;
+  const { userName, destination, days, people, travelStyle } = userData.data;
+
+  // Normalizar os dados
+  const documentContent: DocumentContent = JSON.parse(userData.documentContent);
+
+  // Verifique e normalize os dados após o parsing
+  const itinerary = Array.isArray(documentContent.itinerary)
+    ? documentContent.itinerary
+    : typeof documentContent.itinerary === "string"
+      ? documentContent.itinerary.split("\\n\\n").map((item) => {
+        const [key, ...value] = item.split(":");
+        return { [key.trim()]: value.join(":").trim() };
+      })
+      : [];
+  const practicalInfo = Array.isArray(documentContent.practicalInfo)
+    ? documentContent.practicalInfo
+    : typeof documentContent.practicalInfo === "string"
+      ? documentContent.practicalInfo.split("\\n\\n").map((item) => {
+        const [key, ...value] = item.split(":");
+        return { [key.trim()]: value.join(":").trim() };
+      })
+      : [];
+  const cultureEtiquette = Array.isArray(documentContent.cultureEtiquette)
+    ? documentContent.cultureEtiquette
+    : typeof documentContent.cultureEtiquette === "string"
+      ? documentContent.cultureEtiquette.split("\\n\\n").map((item) => {
+        const [key, ...value] = item.split(":");
+        return { [key.trim()]: value.join(":").trim() };
+      })
+      : [];
+  const emergency = Array.isArray(documentContent.emergency)
+    ? documentContent.emergency
+    : typeof documentContent.emergency === "string"
+      ? documentContent.emergency.split("\\n\\n").map((item) => {
+        const [key, ...value] = item.split(":");
+        return { [key.trim()]: value.join(":").trim() };
+      })
+      : [];
 
   return (
     <div className="container mx-auto p-4">
@@ -66,7 +101,6 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
 
       {!showGuide ? (
         <>
-          {/* Dashboard View */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Trip Overview</CardTitle>
@@ -103,7 +137,6 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         </>
       ) : (
         <Card className="w-full">
-          {/* Guide View */}
           <CardHeader>
             <CardTitle>Your Comprehensive Travel Guide</CardTitle>
             <CardDescription>Everything you need to know for your trip</CardDescription>
@@ -118,25 +151,46 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
               </TabsList>
               <TabsContent value="itinerary">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  <p>{documentContent}</p>
+                  {itinerary.map((day: { [key: string]: string }, index: number) => (
+                    <div key={index}>
+                      <h3 className="text-lg font-semibold">{Object.keys(day)[0]}</h3>
+                      <p>{Object.values(day)[0]}</p>
+                      <Separator className="my-2" />
+                    </div>
+                  ))}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="practical">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  <h3>Include Transport: {includeTransport ? `Yes (${transportType})` : "No"}</h3>
-                  <h3>Include Meals: {includeMeals ? "Yes" : "No"}</h3>
+                  {practicalInfo.map((info: { [key: string]: string }, index: number) => (
+                    <div key={index}>
+                      <h3 className="text-lg font-semibold">{Object.keys(info)[0]}</h3>
+                      <p>{Object.values(info)[0]}</p>
+                      <Separator className="my-2" />
+                    </div>
+                  ))}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="culture">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  <h3>Travel Style: {travelStyle}</h3>
-                  <p>Custom content related to culture can go here.</p>
+                  {cultureEtiquette.map((item: { [key: string]: string }, index: number) => (
+                    <div key={index}>
+                      <h3 className="text-lg font-semibold">{Object.keys(item)[0]}</h3>
+                      <p>{Object.values(item)[0]}</p>
+                      <Separator className="my-2" />
+                    </div>
+                  ))}
                 </ScrollArea>
               </TabsContent>
               <TabsContent value="emergency">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  <h3>Emergency Info</h3>
-                  <p>Custom emergency details here.</p>
+                  {emergency.map((emergencyItem: { [key: string]: string }, index: number) => (
+                    <div key={index}>
+                      <h3 className="text-lg font-semibold">{Object.keys(emergencyItem)[0]}</h3>
+                      <p>{Object.values(emergencyItem)[0]}</p>
+                      <Separator className="my-2" />
+                    </div>
+                  ))}
                 </ScrollArea>
               </TabsContent>
             </Tabs>

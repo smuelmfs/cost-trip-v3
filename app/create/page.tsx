@@ -90,7 +90,7 @@ export default function CreatePage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Create Your Travel Cost Plan</CardTitle>
           <CardDescription>
-            Plan your perfect trip by filling out the details below and well help you estimate
+            Plan your perfect trip by filling out the details below and we’ll help you estimate
             the costs.
           </CardDescription>
         </CardHeader>

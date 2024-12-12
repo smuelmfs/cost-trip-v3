@@ -61,8 +61,8 @@ export async function POST(req: Request) {
       const user = await User.create({
         email: userEmail,
         data: metadata,
-        documentContent,
-      });
+        documentContent: JSON.stringify(documentContent), // Serialização do conteúdo como JSON
+      });            
       console.log("Saved user to MongoDB:", user);
 
       // Enviar e-mail com link para o dashboard
