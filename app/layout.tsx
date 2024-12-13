@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Shadcn - Landing template",
-  description: "Landing template from Shadcn",
+  title: "Travel Dashboard",
+  description: "A comprehensive travel guide for users",
 };
 
 export default function RootLayout({
@@ -17,17 +17,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-br" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background", inter.className)}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+    <html lang="en">
+      <body
+        className={cn(
+          inter.className,
+          "min-h-screen bg-background"
+        )}
+      >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <Navbar />
-
-          {children}
+          <main className="container mx-auto p-6">{children}</main>
         </ThemeProvider>
       </body>
     </html>
