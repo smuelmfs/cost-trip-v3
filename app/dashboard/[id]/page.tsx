@@ -11,15 +11,16 @@ import { Label } from "@/components/ui/label";
 import { CheckSquare, List, MapPin, Plane } from "lucide-react";
 
 // Define the interface for document content
-interface DocumentContent {
-  itinerary: any;
-  practicalInfo: any;
-  cultureEtiquette: any;
-  emergency: any;
+interface TravelGuide {
+  itinerary: { dayTitle: string; activities: string[] }[];
+  practicalInfo: { title: string; description: string }[];
+  cultureEtiquette: { title: string; description: string }[];
+  emergency: { title: string; description: string }[];
 }
 
 export default function DashboardPage({ params }: { params: { id: string } }) {
-  const [userData, setUserData] = useState<{ data: any; documentContent: string } | null>(null);
+  const [travelGuide, setTravelGuide] = useState<TravelGuide | null>(null);
+  const [userData, setUserData] = useState<{ userName: string; destination: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGuide, setShowGuide] = useState(false); // Controle do toggle
   const router = useRouter();
@@ -30,7 +31,9 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         const response = await fetch(`/api/user/${params.id}`);
         if (!response.ok) throw new Error("Failed to fetch user data");
         const data = await response.json();
-        setUserData(data);
+
+        setUserData({ userName: data.data.userName, destination: data.data.destination });
+        setTravelGuide(JSON.parse(data.documentContent));
       } catch (error) {
         console.error(error);
         router.push("/error");
@@ -42,51 +45,12 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
   }, [params.id, router]);
 
   if (loading) return <div>Loading...</div>;
-  if (!userData) return <div>No data found for this user.</div>;
-
-  const { userName, destination, days, people, travelStyle } = userData.data;
-
-  // Normalizar os dados
-  const documentContent: DocumentContent = JSON.parse(userData.documentContent);
-
-  // Verifique e normalize os dados após o parsing
-  const itinerary = Array.isArray(documentContent.itinerary)
-    ? documentContent.itinerary
-    : typeof documentContent.itinerary === "string"
-      ? documentContent.itinerary.split("\\n\\n").map((item) => {
-        const [key, ...value] = item.split(":");
-        return { [key.trim()]: value.join(":").trim() };
-      })
-      : [];
-  const practicalInfo = Array.isArray(documentContent.practicalInfo)
-    ? documentContent.practicalInfo
-    : typeof documentContent.practicalInfo === "string"
-      ? documentContent.practicalInfo.split("\\n\\n").map((item) => {
-        const [key, ...value] = item.split(":");
-        return { [key.trim()]: value.join(":").trim() };
-      })
-      : [];
-  const cultureEtiquette = Array.isArray(documentContent.cultureEtiquette)
-    ? documentContent.cultureEtiquette
-    : typeof documentContent.cultureEtiquette === "string"
-      ? documentContent.cultureEtiquette.split("\\n\\n").map((item) => {
-        const [key, ...value] = item.split(":");
-        return { [key.trim()]: value.join(":").trim() };
-      })
-      : [];
-  const emergency = Array.isArray(documentContent.emergency)
-    ? documentContent.emergency
-    : typeof documentContent.emergency === "string"
-      ? documentContent.emergency.split("\\n\\n").map((item) => {
-        const [key, ...value] = item.split(":");
-        return { [key.trim()]: value.join(":").trim() };
-      })
-      : [];
+  if (!travelGuide || !userData) return <div>No data available for this user.</div>;
 
   return (
     <div className="container mx-auto p-4">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Travel Dashboard for {userName}</h1>
+        <h1 className="text-3xl font-bold">Travel Dashboard for {userData.userName}</h1>
         <div className="flex items-center space-x-2">
           <Switch
             id="guide-mode"
@@ -100,41 +64,33 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
       </header>
 
       {!showGuide ? (
-        <>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Trip Overview</CardTitle>
-              <CardDescription>Your journey at a glance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex space-x-4 text-center">
-                <div>
-                  <Plane className="h-6 w-6 mx-auto mb-2" />
-                  <p className="text-sm font-medium">{days} Days</p>
-                  <p className="text-xs text-muted-foreground">Duration</p>
-                </div>
-                <Separator orientation="vertical" />
-                <div>
-                  <MapPin className="h-6 w-6 mx-auto mb-2" />
-                  <p className="text-sm font-medium">{destination}</p>
-                  <p className="text-xs text-muted-foreground">Destination</p>
-                </div>
-                <Separator orientation="vertical" />
-                <div>
-                  <List className="h-6 w-6 mx-auto mb-2" />
-                  <p className="text-sm font-medium">{people}</p>
-                  <p className="text-xs text-muted-foreground">Travelers</p>
-                </div>
-                <Separator orientation="vertical" />
-                <div>
-                  <CheckSquare className="h-6 w-6 mx-auto mb-2" />
-                  <p className="text-sm font-medium">{travelStyle}</p>
-                  <p className="text-xs text-muted-foreground">Style</p>
-                </div>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Trip Overview</CardTitle>
+            <CardDescription>Your journey at a glance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex space-x-4 text-center">
+              <div>
+                <Plane className="h-6 w-6 mx-auto mb-2" />
+                <p className="text-sm font-medium">{travelGuide.itinerary.length} Days</p>
+                <p className="text-xs text-muted-foreground">Duration</p>
               </div>
-            </CardContent>
-          </Card>
-        </>
+              <Separator orientation="vertical" />
+              <div>
+                <MapPin className="h-6 w-6 mx-auto mb-2" />
+                <p className="text-sm font-medium">{userData.destination}</p>
+                <p className="text-xs text-muted-foreground">Destination</p>
+              </div>
+              <Separator orientation="vertical" />
+              <div>
+                <CheckSquare className="h-6 w-6 mx-auto mb-2" />
+                <p className="text-sm font-medium">Comfort</p>
+                <p className="text-xs text-muted-foreground">Style</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <Card className="w-full">
           <CardHeader>
@@ -151,10 +107,14 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
               </TabsList>
               <TabsContent value="itinerary">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  {itinerary.map((day: { [key: string]: string }, index: number) => (
+                  {travelGuide.itinerary.map((day, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-semibold">{Object.keys(day)[0]}</h3>
-                      <p>{Object.values(day)[0]}</p>
+                      <h3 className="text-lg font-bold mb-2">{day.dayTitle}</h3>
+                      <ul className="list-disc pl-5">
+                        {day.activities.map((activity, idx) => (
+                          <li key={idx}>{activity}</li>
+                        ))}
+                      </ul>
                       <Separator className="my-2" />
                     </div>
                   ))}
@@ -162,10 +122,10 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
               </TabsContent>
               <TabsContent value="practical">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  {practicalInfo.map((info: { [key: string]: string }, index: number) => (
+                  {travelGuide.practicalInfo.map((info, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-semibold">{Object.keys(info)[0]}</h3>
-                      <p>{Object.values(info)[0]}</p>
+                      <h3 className="text-lg font-bold mb-2">{info.title}</h3>
+                      <p>{info.description}</p>
                       <Separator className="my-2" />
                     </div>
                   ))}
@@ -173,10 +133,10 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
               </TabsContent>
               <TabsContent value="culture">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  {cultureEtiquette.map((item: { [key: string]: string }, index: number) => (
+                  {travelGuide.cultureEtiquette.map((item, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-semibold">{Object.keys(item)[0]}</h3>
-                      <p>{Object.values(item)[0]}</p>
+                      <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                      <p>{item.description}</p>
                       <Separator className="my-2" />
                     </div>
                   ))}
@@ -184,10 +144,10 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
               </TabsContent>
               <TabsContent value="emergency">
                 <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-                  {emergency.map((emergencyItem: { [key: string]: string }, index: number) => (
+                  {travelGuide.emergency.map((emergencyItem, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-semibold">{Object.keys(emergencyItem)[0]}</h3>
-                      <p>{Object.values(emergencyItem)[0]}</p>
+                      <h3 className="text-lg font-bold mb-2">{emergencyItem.title}</h3>
+                      <p>{emergencyItem.description}</p>
                       <Separator className="my-2" />
                     </div>
                   ))}
