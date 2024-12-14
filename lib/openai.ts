@@ -16,8 +16,28 @@ export async function generateDetailedGuide(data: {
   includeTransport: boolean;
   transportType?: string;
   includeMeals: boolean;
+  mealType?: string;
 }) {
-  const { userName, destination, days, people, travelStyle, includeTransport, transportType, includeMeals } = data;
+  const {
+    userName,
+    destination,
+    days,
+    people,
+    travelStyle,
+    includeTransport,
+    transportType,
+    includeMeals,
+    mealType,
+  } = data;
+
+  // Criar seções dinâmicas do prompt
+  const transportInfo = includeTransport
+    ? `Include Transport: Yes (${transportType || "General transport"})`
+    : "Include Transport: No";
+
+  const mealInfo = includeMeals
+    ? `Include Meals: Yes (${mealType || "General meal options"})`
+    : "Include Meals: No";
 
   const prompt = `
 You are a professional travel guide and a local citizen from ${destination}. Generate a detailed travel guide in JSON format for the following client:
@@ -27,38 +47,57 @@ Destination: ${destination}
 Duration: ${days} days
 Number of People: ${people}
 Travel Style: ${travelStyle}
-Include Transport: ${includeTransport ? `Yes (${transportType})` : "No"}
-Include Meals: ${includeMeals ? "Yes" : "No"}
+${transportInfo}
+${mealInfo}
 
-### Output the result as a JSON object with the following structure:
+### Instructions:
+1. Create a JSON object.
+2. Fill **all days** of the itinerary completely. Do not leave placeholders or comments—just do your guide job. Each day must include activities for morning, afternoon, and evening.
+3. Use concise but detailed descriptions.
+
+### Example Output:
 
 {
   "itinerary": [
-    { "dayTitle": "Day 1: Example Title", "activities": ["Activity 1", "Activity 2"] },
-    { "dayTitle": "Day 2: Another Title", "activities": ["Activity 1", "Activity 2"] }
+    { "dayTitle": "Day 1: Arrival & Sightseeing", "morning": ["Activity 1"], "afternoon": ["Activity 2"], "evening": ["Activity 3"] },
+    { "dayTitle": "Day 2: Explore Culture", "morning": ["Activity A"], "afternoon": ["Activity B"], "evening": ["Activity C"] }
   ],
   "practicalInfo": [
-    { "title": "Transportation", "description": "Details about transport options." },
-    { "title": "Currency", "description": "Details about currency and exchange rates." }
+    { "title": "Transportation", "description": "Details about transport." },
+    { "title": "Money", "description": "Details about currency." },
+    { "title": "Weather", "description": "Details about weather." },
+    { "title": "Language", "description": "Details about language." },
+    { "title": "Electricity", "description": "Details about electricity." },
+    { "title": "Shopping", "description": "Details about shopping." }
   ],
   "cultureEtiquette": [
-    { "title": "Greetings", "description": "Details about local greetings." },
-    { "title": "Dining Etiquette", "description": "Details about dining culture." }
+    { "title": "Greetings", "description": "Details about greetings." },
+    { "title": "Dining Etiquette", "description": "Details about dining etiquette." },
+    { "title": "Dress Code", "description": "Details about dress code." },
+    { "title": "Public Behavior", "description": "Details about public behavior." },
+    { "title": "Respect for Local Sites", "description": "Details about respecting local sites." }
   ],
   "emergency": [
-    { "title": "Emergency Numbers", "description": "Details about emergency contacts." },
-    { "title": "Hospitals", "description": "Details about nearby hospitals." }
+    { "title": "Emergency Numbers", "description": "Details about emergency numbers." },
+    { "title": "Hospitals", "description": "Details about hospitals." },
+    { "title": "Pharmacies", "description": "Details about pharmacies." },
+    { "title": "Common Scams", "description": "Details about common scams." },
+    { "title": "Embassy Contact", "description": "Details about embassy contact." },
+    { "title": "Useful Phrases in Emergencies", "description": "Details about useful phrases." }
   ]
 }
 
-Provide concise but detailed content for each field. Ensure proper JSON formatting.
+### Generate the JSON:
+- Ensure there are no comments or placeholders in the output.
+- Fill all days (${days}) of the itinerary based on the destination.
+- Validate the JSON format before outputting.
 `;
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 3000,
+      max_tokens: 3000, // Ajuste para limitar a quantidade de texto retornado
     });
 
     const content = response.choices?.[0]?.message?.content;
@@ -70,12 +109,17 @@ Provide concise but detailed content for each field. Ensure proper JSON formatti
     // Log the raw content for debugging purposes
     console.log("Raw OpenAI Response:", content);
 
-    // Validate if the content is valid JSON
+    // Remove comentários e corrigir vírgulas finais inválidas
+    const sanitizedContent = content
+      .replace(/\/\/.*$/gm, "") // Remove comentários
+      .replace(/\,(?=\s*?[\}\]])/g, ""); // Remove vírgulas finais extras
+
+    // Validate if the sanitized content is valid JSON
     let structuredResponse;
     try {
-      structuredResponse = JSON.parse(content.trim());
+      structuredResponse = JSON.parse(sanitizedContent.trim());
     } catch (error) {
-      console.error("Invalid JSON:", content);
+      console.error("Invalid JSON after sanitization:", sanitizedContent);
       throw new Error("OpenAI returned invalid JSON.");
     }
 
