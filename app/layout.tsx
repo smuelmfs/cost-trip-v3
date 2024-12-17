@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Travel Dashboard",
+  title: "Costimizer",
   description: "A comprehensive travel guide for users",
 };
 

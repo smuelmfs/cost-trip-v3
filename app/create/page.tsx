@@ -31,38 +31,59 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
-// Esquema de validação Zod com transporte e refeições
+// Esquema de validação Zod
 const formSchema = z.object({
-  userName: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  userEmail: z.string().email({ message: "Please enter a valid email address." }),
-  destination: z.string().min(2, { message: "Destination must be at least 2 characters." }),
+  userName: z.string().min(2, { message: "Insira ao menos 2 caracteres." }),
+  userEmail: z.string().email({ message: "Insira um e-mail válido." }),
+  destination: z.string().min(2, { message: "Escolha um destino válido." }),
   days: z
     .string()
-    .regex(/^\d+$/, "Must be a positive number.")
+    .regex(/^\d+$/, "Insira um número positivo.")
     .refine((value) => parseInt(value) <= 30, {
-      message: "The maximum number of days allowed is 30.",
+      message: "O máximo permitido são 30 dias.",
     }),
-  people: z.string().regex(/^\d+$/, "Must be a positive number."),
+  people: z.string().regex(/^\d+$/, "Insira um número positivo."),
   travelStyle: z.string({
-    required_error: "Please select a travel style.",
+    required_error: "Escolha um estilo de viagem.",
   }),
-  includeTransport: z.string().min(1, { message: "Please select a transport option." }),
-  includeMeals: z.boolean().default(false),
-  mealType: z.string().optional(),
+  includeTransport: z.string().min(1, { message: "Escolha uma opção de transporte." }),
+  includeMeals: z.string().optional(),
 });
 
 export default function CreatePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [inputValue, setInputValue] = useState("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       includeTransport: "",
-      includeMeals: false,
+      includeMeals: "",
     },
   });
+
+  // Busca dinâmica para sugestões de destino
+  const fetchDestinations = async (query: string) => {
+    if (!query) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${query}&featuretype=city&addressdetails=1`
+      );
+      const data = await response.json();
+      // Filtra apenas cidades ou locais válidos
+      const filteredData = data.filter((item: any) => item.type === "city" || item.type === "administrative");
+      setSuggestions(filteredData);
+    } catch (error) {
+      console.error("Erro ao buscar destinos:", error);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -79,199 +100,217 @@ export default function CreatePage() {
         window.location.href = result.checkoutUrl;
       }
     } catch (error) {
-      console.error("Error creating checkout session:", error);
+      console.error("Erro ao gerar o pagamento:", error);
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create Your Travel Cost Plan</CardTitle>
-          <CardDescription>
-            Plan your perfect trip by filling out the details below and we’ll help you estimate
-            the costs.
+    <div className="relative flex items-center justify-center min-h-screen px-4 bg-gray-900">
+      {/* Camada de Blur com ajuste */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-800/50 to-transparent blur-[120px]"></div>
+
+      {/* Formulário Central */}
+      <Card className="relative w-full max-w-3xl shadow-2xl z-10 bg-card border border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-3xl text-center font-bold text-white">
+            Planeje Sua Viagem
+          </CardTitle>
+          <CardDescription className="text-center text-gray-400">
+            Preencha os detalhes abaixo para gerar uma estimativa dos custos da sua viagem.
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* User Name */}
-              <FormField
-                control={form.control}
-                name="userName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* User Email */}
-              <FormField
-                control={form.control}
-                name="userEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="Enter your email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Destination */}
-              <FormField
-                control={form.control}
-                name="destination"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Destination</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Plane className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Enter your destination" className="pl-8" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Days */}
-                <FormField
-                  control={form.control}
-                  name="days"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Number of Days</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            min="1"
-                            max="30" // Limita o input no navegador
-                            placeholder="How many days?"
-                            className="pl-8"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* People */}
-                <FormField
-                  control={form.control}
-                  name="people"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Number of People</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Users className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="How many travelers?"
-                            className="pl-8"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Informações Pessoais */}
+              <div>
+                <h3 className="text-lg font-bold mb-2 text-white">Informações Pessoais</h3>
+                <Separator className="mb-4" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="userName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Seu Nome</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex.: João Silva" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="userEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Seu E-mail</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Ex.: joao@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
-              {/* Travel Style */}
-              <FormField
-                control={form.control}
-                name="travelStyle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Travel Style</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose your travel style" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="budget">Budget</SelectItem>
-                        <SelectItem value="comfort">Comfort</SelectItem>
-                        <SelectItem value="luxury">Luxury</SelectItem>
-                        <SelectItem value="backpacker">Backpacker</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Include Transport */}
-              <FormField
-                control={form.control}
-                name="includeTransport"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preferred Transport</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose your transportation style" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Taxi">Taxi</SelectItem>
-                        <SelectItem value="Public Transport">Public Transport</SelectItem>
-                        <SelectItem value="Car Rental">Car Rental</SelectItem>
-                        <SelectItem value="Walking">Walking</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Include Meals */}
-              <FormField
-                control={form.control}
-                name="includeMeals"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      <FormLabel className="m-0">Include Meals</FormLabel>
-                    </div>
-                    {field.value && (
-                      <FormField
-                        control={form.control}
-                        name="mealType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Meal Type</FormLabel>
-                            <FormControl>
-                              <Input placeholder="E.g., Vegetarian, Buffet, etc." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+              {/* Detalhes da Viagem */}
+              <div>
+                <h3 className="text-lg font-bold mb-2 text-white">Detalhes da Viagem</h3>
+                <Separator className="mb-4" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="destination"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Destino</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            {/* Input com estilo dinâmico para modo claro/escuro */}
+                            <Input
+                              placeholder="Digite o destino (ex.: Paris)"
+                              value={inputValue}
+                              className="bg-white text-black dark:bg-gray-800 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setInputValue(value);
+                                fetchDestinations(value);
+                                field.onChange(value);
+                              }}
+                            />
+                            {/* Sugestões */}
+                            {suggestions.length > 0 && (
+                              <ul className="absolute top-full left-0 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-auto z-50">
+                                {suggestions.map((item, index) => (
+                                  <li
+                                    key={index}
+                                    className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 text-black dark:text-white"
+                                    onClick={() => {
+                                      field.onChange(item.display_name);
+                                      setInputValue(item.display_name);
+                                      setSuggestions([]);
+                                    }}
+                                  >
+                                    {item.display_name}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </FormItem>
-                )}
-              />
+                  />
+                  <FormField
+                    control={form.control}
+                    name="days"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantidade de Dias</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Ex.: 7" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="people"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantidade de Pessoas</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Ex.: 2" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Preferências */}
+              <div>
+                <h3 className="text-lg font-bold mb-2 text-white">Preferências</h3>
+                <Separator className="mb-4" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Estilo da Viagem */}
+                  <FormField
+                    control={form.control}
+                    name="travelStyle"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estilo da Viagem</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Escolha um estilo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="budget">Econômico</SelectItem>
+                            <SelectItem value="comfort">Conforto</SelectItem>
+                            <SelectItem value="luxury">Luxo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Transporte Preferido */}
+                  <FormField
+                    control={form.control}
+                    name="includeTransport"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Transporte Preferido</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Escolha uma opção" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Taxi">Táxi</SelectItem>
+                            <SelectItem value="Public Transport">Transporte Público</SelectItem>
+                            <SelectItem value="Car Rental">Aluguel de Carro</SelectItem>
+                            <SelectItem value="Walking">A Pé</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Tipo de Refeições */}
+                  <FormField
+                    control={form.control}
+                    name="includeMeals"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferência de Refeições</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value ? String(field.value) : ""}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Escolha uma opção de refeição" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="street_food">Comida de Rua</SelectItem>
+                            <SelectItem value="restaurants">Restaurantes</SelectItem>
+                            <SelectItem value="buffet">Buffet</SelectItem>
+                            <SelectItem value="local_cuisine">Culinária Local</SelectItem>
+                            <SelectItem value="none">Não Incluir</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </form>
           </Form>
         </CardContent>
@@ -282,7 +321,7 @@ export default function CreatePage() {
             disabled={isLoading}
             onClick={form.handleSubmit(onSubmit)}
           >
-            {isLoading ? "Generating..." : "Generate Cost Preview"}
+            {isLoading ? "Gerando..." : "Gerar meu guia"}
           </Button>
         </CardFooter>
       </Card>

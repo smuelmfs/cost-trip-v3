@@ -10,28 +10,28 @@ interface BenefitsProps {
 
 const benefitList: BenefitsProps[] = [
   {
-    icon: "Blocks",
-    title: "Build Brand Trust",
+    icon: "Map",
+    title: "Roteiros Personalizados",
     description:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. A odio velit cum aliquam. Natus consectetur dolores.",
+      "Receba um roteiro detalhado com atividades divididas entre manhã, tarde e noite, adaptado ao destino e ao número de dias da sua viagem.",
   },
   {
-    icon: "LineChart",
-    title: "More Leads",
+    icon: "Calculator",
+    title: "Cálculo de Custos Precisos",
     description:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. A odio velit cum aliquam, natus consectetur.",
+      "Obtenha um resumo completo dos custos estimados da viagem com base nas suas preferências e estilo de viagem.",
   },
   {
-    icon: "Wallet",
-    title: "Higher Conversions",
+    icon: "Plane",
+    title: "Planejamento Simplificado",
     description:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus consectetur. A odio velit cum aliquam",
+      "Planeje sua viagem sem complicação. Informe o destino, a quantidade de dias e o estilo de viagem, e nós fazemos o resto.",
   },
   {
-    icon: "Sparkle",
-    title: "Test Marketing Ideas",
+    icon: "ClipboardCheck",
+    title: "Organização Completa",
     description:
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. A odio velit cum aliquam. Natus consectetur dolores.",
+      "Tenha todas as informações da viagem organizadas em um só lugar, incluindo roteiros e custos gerados.",
   },
 ];
 
@@ -40,15 +40,14 @@ export const BenefitsSection = () => {
     <section id="benefits" className="container py-24 sm:py-32">
       <div className="grid lg:grid-cols-2 place-items-center lg:gap-24">
         <div>
-          <h2 className="text-lg text-primary mb-2 tracking-wider">Benefits</h2>
+          <h2 className="text-lg text-primary mb-2 tracking-wider">Benefícios</h2>
 
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Your Shortcut to Success
+            Facilite o Planejamento da Sua Viagem
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Lorem ipsum dolor sit amet consectetur, adipisicing elit. Non
-            ducimus reprehenderit architecto rerum similique facere odit
-            deleniti necessitatibus quo quae.
+            Nosso sistema gera roteiros personalizados e calcula os custos estimados da sua viagem
+            de maneira rápida, prática e organizada.
           </p>
         </div>
 

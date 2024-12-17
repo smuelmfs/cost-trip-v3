@@ -1,4 +1,3 @@
-import DiscordIcon from "@/components/icons/discord-icon";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,34 +6,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PlaneTakeoff } from "lucide-react";
 
 export const CommunitySection = () => {
   return (
-    <section id="community" className="py-12 ">
+    <section id="start" className="py-12">
       <hr className="border-secondary" />
       <div className="container py-20 sm:py-20">
         <div className="lg:w-[60%] mx-auto">
           <Card className="bg-background border-none shadow-none text-center flex flex-col items-center justify-center">
             <CardHeader>
               <CardTitle className="text-4xl md:text-5xl font-bold flex flex-col items-center">
-                <DiscordIcon />
+                <PlaneTakeoff size={48} className="text-primary mb-4" />
                 <div>
-                  Ready to join this
+                  Pronto para planejar sua
                   <span className="text-transparent pl-2 bg-gradient-to-r from-[#D247BF] to-primary bg-clip-text">
-                    Community?
+                    próxima viagem?
                   </span>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="lg:w-[80%] text-xl text-muted-foreground">
-              Join our vibrant Discord community! Connect, share, and grow with
-              like-minded enthusiasts. Click to dive in! 🚀
+              Transforme seus planos de viagem em realidade com roteiros
+              detalhados e estimativas de custos precisas. É rápido, simples e
+              completo!
             </CardContent>
 
             <CardFooter>
-              <Button asChild>
-                <a href="https://discord.com/" target="_blank">
-                  Join Discord
+              <Button asChild className="text-lg font-bold px-6 py-3">
+                <a href="/create">
+                  Comece Agora
                 </a>
               </Button>
             </CardFooter>
