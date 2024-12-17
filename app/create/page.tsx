@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plane, Users, Calendar, Calculator } from "lucide-react";
+import { Plane, Users, Calendar } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import * as z from "zod";
@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -32,22 +31,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
+// Esquema de validação Zod com transporte e refeições
 const formSchema = z.object({
   userName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   userEmail: z.string().email({ message: "Please enter a valid email address." }),
   destination: z.string().min(2, { message: "Destination must be at least 2 characters." }),
-  days: z.string().regex(/^\d+$/, "Must be a positive number.").min(1, {
-    message: "Please enter the number of days.",
-  }),
-  people: z.string().regex(/^\d+$/, "Must be a positive number.").min(1, {
-    message: "Please enter the number of people.",
-  }),
+  days: z
+    .string()
+    .regex(/^\d+$/, "Must be a positive number.")
+    .refine((value) => parseInt(value) <= 30, {
+      message: "The maximum number of days allowed is 30.",
+    }),
+  people: z.string().regex(/^\d+$/, "Must be a positive number."),
   travelStyle: z.string({
     required_error: "Please select a travel style.",
   }),
-  includeTransport: z.boolean().default(false),
-  transportType: z.string().optional(),
+  includeTransport: z.string().min(1, { message: "Please select a transport option." }),
   includeMeals: z.boolean().default(false),
   mealType: z.string().optional(),
 });
@@ -58,7 +59,7 @@ export default function CreatePage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      includeTransport: false,
+      includeTransport: "",
       includeMeals: false,
     },
   });
@@ -75,7 +76,7 @@ export default function CreatePage() {
       const result = await response.json();
 
       if (result.checkoutUrl) {
-        window.location.href = result.checkoutUrl; // Redireciona para o Stripe Checkout
+        window.location.href = result.checkoutUrl;
       }
     } catch (error) {
       console.error("Error creating checkout session:", error);
@@ -111,6 +112,7 @@ export default function CreatePage() {
                   </FormItem>
                 )}
               />
+
               {/* User Email */}
               <FormField
                 control={form.control}
@@ -125,6 +127,7 @@ export default function CreatePage() {
                   </FormItem>
                 )}
               />
+
               {/* Destination */}
               <FormField
                 control={form.control}
@@ -142,6 +145,7 @@ export default function CreatePage() {
                   </FormItem>
                 )}
               />
+
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Days */}
                 <FormField
@@ -156,6 +160,7 @@ export default function CreatePage() {
                           <Input
                             type="number"
                             min="1"
+                            max="30" // Limita o input no navegador
                             placeholder="How many days?"
                             className="pl-8"
                             {...field}
@@ -166,6 +171,7 @@ export default function CreatePage() {
                     </FormItem>
                   )}
                 />
+
                 {/* People */}
                 <FormField
                   control={form.control}
@@ -190,6 +196,7 @@ export default function CreatePage() {
                   )}
                 />
               </div>
+
               {/* Travel Style */}
               <FormField
                 control={form.control}
@@ -212,20 +219,32 @@ export default function CreatePage() {
                   </FormItem>
                 )}
               />
-              {/* Transport */}
+
+              {/* Include Transport */}
               <FormField
                 control={form.control}
                 name="includeTransport"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      <FormLabel className="m-0">Include Transport</FormLabel>
-                    </div>
+                    <FormLabel>Preferred Transport</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose your transportation style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Taxi">Taxi</SelectItem>
+                        <SelectItem value="Public Transport">Public Transport</SelectItem>
+                        <SelectItem value="Car Rental">Car Rental</SelectItem>
+                        <SelectItem value="Walking">Walking</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
-              {/* Meals */}
+
+              {/* Include Meals */}
               <FormField
                 control={form.control}
                 name="includeMeals"
@@ -235,6 +254,21 @@ export default function CreatePage() {
                       <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       <FormLabel className="m-0">Include Meals</FormLabel>
                     </div>
+                    {field.value && (
+                      <FormField
+                        control={form.control}
+                        name="mealType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Meal Type</FormLabel>
+                            <FormControl>
+                              <Input placeholder="E.g., Vegetarian, Buffet, etc." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </FormItem>
                 )}
               />

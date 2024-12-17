@@ -1,9 +1,4 @@
-import Configuration from "openai";
 import { OpenAI } from "openai";
-
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY, // Sua chave da OpenAI
-});
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -13,11 +8,11 @@ export async function generateDetailedGuide(data: {
   days: string;
   people: string;
   travelStyle: string;
-  includeTransport: boolean;
+  includeTransport: string;
   transportType?: string;
-  includeMeals: boolean;
+  includeMeals: string;
   mealType?: string;
-}) {
+}): Promise<any> {
   const {
     userName,
     destination,
@@ -30,7 +25,9 @@ export async function generateDetailedGuide(data: {
     mealType,
   } = data;
 
-  // Criar seções dinâmicas do prompt
+  const MAX_DAYS = 30;
+  const adjustedDays = Math.min(parseInt(days), MAX_DAYS);
+
   const transportInfo = includeTransport
     ? `Include Transport: Yes (${transportType || "General transport"})`
     : "Include Transport: No";
@@ -39,93 +36,152 @@ export async function generateDetailedGuide(data: {
     ? `Include Meals: Yes (${mealType || "General meal options"})`
     : "Include Meals: No";
 
+  // Create a skeleton for the travel guide
+  const travelGuideSkeleton = createTravelGuideSkeleton(adjustedDays);
+
   const prompt = `
 You are a professional travel guide and a local citizen from ${destination}. Generate a detailed travel guide in JSON format for the following client:
 
 Client Name: ${userName}
 Destination: ${destination}
-Duration: ${days} days
+Duration: ${adjustedDays} days (IMPORTANT: DO NOT exceed 30 days)
 Number of People: ${people}
 Travel Style: ${travelStyle}
 ${transportInfo}
 ${mealInfo}
 
 ### Instructions:
-1. Create a JSON object.
-2. Fill **all days** of the itinerary completely. Do not leave placeholders or comments—just do your guide job. Each day must include activities for morning, afternoon, and evening.
-3. Use concise but detailed descriptions.
+1. Complete the provided "itinerary" object with activities for each day (morning, afternoon, evening). **Limit to 2-3 activities per time period for itineraries longer than 15 days.**
+2. For "practicalInfo", "cultureEtiquette", and "emergency" sections:
+   - Each **sectionTitle** must have between **1 and 6 valid details**.
+   - The details must be concise, relevant, and realistic. Avoid redundancy.
+3. Ensure all fields are filled out. Do not include placeholders like "..." or "TBD".
+4. Your output must be a **valid JSON** ready for parsing.
+5. Just do your job, the limit of days is 30 days, COMPLETE all days with activities. The client need activities in the days, you are not answering me someone in a chat so don't generate something like '. . . continue for the next few days' this is your REAL job
 
-### Example Output:
+### Skeleton for Travel Guide:
+${JSON.stringify(travelGuideSkeleton, null, 2)}
 
-{
-  "itinerary": [
-    { "dayTitle": "Day 1: Arrival & Sightseeing", "morning": ["Activity 1"], "afternoon": ["Activity 2"], "evening": ["Activity 3"] },
-    { "dayTitle": "Day 2: Explore Culture", "morning": ["Activity A"], "afternoon": ["Activity B"], "evening": ["Activity C"] }
-  ],
-  "practicalInfo": [
-    { "title": "Transportation", "description": "Details about transport." },
-    { "title": "Money", "description": "Details about currency." },
-    { "title": "Weather", "description": "Details about weather." },
-    { "title": "Language", "description": "Details about language." },
-    { "title": "Electricity", "description": "Details about electricity." },
-    { "title": "Shopping", "description": "Details about shopping." }
-  ],
-  "cultureEtiquette": [
-    { "title": "Greetings", "description": "Details about greetings." },
-    { "title": "Dining Etiquette", "description": "Details about dining etiquette." },
-    { "title": "Dress Code", "description": "Details about dress code." },
-    { "title": "Public Behavior", "description": "Details about public behavior." },
-    { "title": "Respect for Local Sites", "description": "Details about respecting local sites." }
-  ],
-  "emergency": [
-    { "title": "Emergency Numbers", "description": "Details about emergency numbers." },
-    { "title": "Hospitals", "description": "Details about hospitals." },
-    { "title": "Pharmacies", "description": "Details about pharmacies." },
-    { "title": "Common Scams", "description": "Details about common scams." },
-    { "title": "Embassy Contact", "description": "Details about embassy contact." },
-    { "title": "Useful Phrases in Emergencies", "description": "Details about useful phrases." }
-  ]
-}
-
-### Generate the JSON:
-- Ensure there are no comments or placeholders in the output.
-- Fill all days (${days}) of the itinerary based on the destination.
-- Validate the JSON format before outputting.
+### Validation Requirements:
+- All **${adjustedDays} days** must be fully detailed with morning, afternoon, and evening activities.
+- The "practicalInfo", "cultureEtiquette", and "emergency" sections must have between **1 and 6 details** per sectionTitle.
+- Output must be valid JSON and ready for parsing.
 `;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 3000, // Ajuste para limitar a quantidade de texto retornado
-    });
+    let attempts = 0;
 
-    const content = response.choices?.[0]?.message?.content;
+    while (attempts < 3) {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 4000,
+      });
 
-    if (!content) {
-      throw new Error("No content returned from OpenAI API.");
+      const content = response.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error("No content returned from OpenAI API.");
+      }
+
+      // Sanitize JSON to remove invalid content
+      const sanitizedContent = content
+        .replace(/\/\/.*$/gm, "") // Remove comments
+        .replace(/\,(?=\s*?[\}\]])/g, ""); // Remove trailing commas
+
+      try {
+        const structuredResponse = JSON.parse(sanitizedContent.trim());
+
+        // Validate that the guide matches the skeleton structure
+        const validatedResponse = validateGuideCompletion(
+          structuredResponse,
+          travelGuideSkeleton
+        );
+
+        return validatedResponse;
+      } catch (error) {
+        console.warn("Validation failed. Retrying...");
+        attempts++;
+      }
     }
 
-    // Log the raw content for debugging purposes
-    console.log("Raw OpenAI Response:", content);
-
-    // Remove comentários e corrigir vírgulas finais inválidas
-    const sanitizedContent = content
-      .replace(/\/\/.*$/gm, "") // Remove comentários
-      .replace(/\,(?=\s*?[\}\]])/g, ""); // Remove vírgulas finais extras
-
-    // Validate if the sanitized content is valid JSON
-    let structuredResponse;
-    try {
-      structuredResponse = JSON.parse(sanitizedContent.trim());
-    } catch (error) {
-      console.error("Invalid JSON after sanitization:", sanitizedContent);
-      throw new Error("OpenAI returned invalid JSON.");
-    }
-
-    return structuredResponse;
+    throw new Error("Failed to generate a valid travel guide after multiple attempts.");
   } catch (error) {
     console.error("Error generating travel guide:", error);
     throw new Error("Failed to generate travel guide.");
   }
+}
+
+// Create a skeleton for the entire travel guide
+function createTravelGuideSkeleton(days: number): any {
+  const itinerary = [];
+  for (let i = 1; i <= days; i++) {
+    itinerary.push({
+      dayTitle: `Day ${i}`,
+      morning: [],
+      afternoon: [],
+      evening: [],
+    });
+  }
+
+  const practicalInfo = [
+    { sectionTitle: "Transportation", details: [] },
+    { sectionTitle: "Currency", details: [] },
+    { sectionTitle: "Weather", details: [] },
+    { sectionTitle: "Language", details: [] },
+    { sectionTitle: "Shopping Tips", details: [] },
+  ];
+
+  const cultureEtiquette = [
+    { sectionTitle: "Greetings", details: [] },
+    { sectionTitle: "Dining Etiquette", details: [] },
+    { sectionTitle: "Dress Code", details: [] },
+    { sectionTitle: "Social Customs", details: [] },
+    { sectionTitle: "Museums and Monuments", details: [] },
+  ];
+
+  const emergency = [
+    { sectionTitle: "Emergency Numbers", details: [] },
+    { sectionTitle: "Pharmacies", details: [] },
+    { sectionTitle: "Hospitals", details: [] },
+    { sectionTitle: "Embassy Contact", details: [] },
+    { sectionTitle: "Safety Tips", details: [] },
+    { sectionTitle: "Useful Phrases in an Emergency", details: [] },
+  ];
+
+  return { itinerary, practicalInfo, cultureEtiquette, emergency };
+}
+
+// Validate that the guide matches the skeleton structure
+function validateGuideCompletion(guide: any, skeleton: any): any {
+  if (!guide || typeof guide !== "object") throw new Error("Invalid guide structure");
+
+  // Validate "itinerary" completion
+  if (!Array.isArray(guide.itinerary) || guide.itinerary.length !== skeleton.itinerary.length) {
+    throw new Error("Itinerary does not match the expected number of days.");
+  }
+
+  // Ensure all activities are filled
+  guide.itinerary.forEach((day: any, index: number) => {
+    if (!day.morning?.length || !day.afternoon?.length || !day.evening?.length) {
+      throw new Error(`Day ${index + 1} is incomplete in the itinerary.`);
+    }
+  });
+
+  // Validate sections with flexibility (1-6 details)
+  const sections = ["practicalInfo", "cultureEtiquette", "emergency"];
+  for (const section of sections) {
+    if (
+      !Array.isArray(guide[section]) ||
+      guide[section].some(
+        (item: any) => !item.details || item.details.length < 1 || item.details.length > 6
+      )
+    ) {
+      throw new Error(
+        `Section "${section}" must include between 1 and 6 details for each sectionTitle.`
+      );
+    }
+  }
+
+  return guide;
 }

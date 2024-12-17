@@ -52,9 +52,9 @@ export async function POST(req: Request) {
         days,
         people,
         travelStyle,
-        includeTransport: includeTransport === "true",
+        includeTransport: includeTransport === "true" ? "true" : "false",
         transportType,
-        includeMeals: includeMeals === "true",
+        includeMeals: includeMeals ? "true" : "false",
       });
 
       // Salvar no banco de dados
