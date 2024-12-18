@@ -7,8 +7,9 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Costimizer",
-  description: "A comprehensive travel guide for users",
+  title: "Costimizer - Seu Guia Completo de Viagens Personalizadas",
+  description:
+    "Planeje sua viagem de forma simples e eficiente com o Costimizer. Crie roteiros personalizados, calcule custos e aproveite dicas valiosas para tornar sua viagem perfeita.",
 };
 
 export default function RootLayout({
@@ -17,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-br">
       <body
         className={cn(
           inter.className,
