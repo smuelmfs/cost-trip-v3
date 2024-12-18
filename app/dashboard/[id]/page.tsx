@@ -13,7 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 // Define the interface for document content
 interface TravelGuide {
-  itinerary: { dayTitle: string; morning: string[]; afternoon: string[]; evening: string[] }[];
+  itinerary: { 
+    dayTitle: string; 
+    morning: { activity: string; cost: number }[]; 
+    afternoon: { activity: string; cost: number }[]; 
+    evening: { activity: string; cost: number }[]; 
+  }[];
   practicalInfo: { sectionTitle: string; details: string[] }[];
   cultureEtiquette: { sectionTitle: string; details: string[] }[];
   emergency: { sectionTitle: string; details: string[] }[];
@@ -40,43 +45,38 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [todos, setTodos] = useState<Todo[]>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('todos');
-      if (saved) {
-        return JSON.parse(saved);
-      }
+      const saved = localStorage.getItem(`todos-${params.id}`);
+      if (saved) return JSON.parse(saved);
     }
     return [
-      { id: 1, task: "Check passport and visa requirements", completed: false },
-      { id: 2, task: "Purchase travel insurance", completed: false },
-      { id: 3, task: "Make copies of important documents", completed: false },
-      { id: 4, task: "Inform bank and credit card companies", completed: false },
-      { id: 5, task: "Pack essential medications", completed: false },
-      { id: 6, task: "Download offline maps and translation app", completed: false },
-      { id: 7, task: "Learn 5 basic phrases in local language", completed: false },
-      { id: 8, task: "Pack a reusable water bottle and shopping bag", completed: false },
-      { id: 9, task: "Create a custom playlist for the trip", completed: false },
-      { id: 10, task: "Plan a surprise activity or meal", completed: false },
+      { id: 1, task: "Verifique os requisitos de passaporte e visto", completed: false },
+      { id: 2, task: "Adquira um seguro de viagem", completed: false },
+      { id: 3, task: "Faça cópias de documentos importantes", completed: false },
+      { id: 4, task: "Informar bancos e operadoras de cartão de crédito", completed: false },
+      { id: 5, task: "Levar medicamentos essenciais", completed: false },
+      { id: 6, task: "Baixe mapas offline e aplicativo de tradução", completed: false },
+      { id: 7, task: "Aprenda 5 frases básicas no idioma local", completed: false },
+      { id: 8, task: "Sempre leve uma garrafa de água", completed: false },
+      { id: 9, task: "Crie uma playlist personalizada para a viagem", completed: false },
+      { id: 10, task: "Planeje uma atividade ou refeição surpresa", completed: false },
     ];
   });
 
   const [activities, setActivities] = useState<Activity[]>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('activities');
-      if (saved) {
-        return JSON.parse(saved);
-      }
+      const saved = localStorage.getItem(`activities-${params.id}`);
+      if (saved) return JSON.parse(saved);
     }
     return [
-      { id: 1, activity: "Try a local dish you've never heard of", completed: false },
-      { id: 2, activity: "Visit a local market or bazaar", completed: false },
-      { id: 3, activity: "Take a cooking class featuring regional cuisine", completed: false },
-      { id: 4, activity: "Attend a local festival or event", completed: false },
-      { id: 5, activity: "Go on a guided tour led by a local", completed: false },
-      { id: 6, activity: "Visit a museum showcasing local history or art", completed: false },
-      { id: 7, activity: "Take a scenic hike or nature walk", completed: false },
-      { id: 8, activity: "Learn and practice a local craft or art form", completed: false },
-      { id: 9, activity: "Watch the sunrise or sunset from a scenic spot", completed: false },
-      { id: 10, activity: "Make a friend with a local and learn about their life", completed: false },
+      { id: 1, activity: "Experimente um prato local do qual você nunca ouviu falar", completed: false },
+      { id: 2, activity: "Visite um mercado local", completed: false },
+      { id: 3, activity: "Faça uma aula de culinária com culinária regional", completed: false },
+      { id: 4, activity: "Participe de um festival ou evento local", completed: false },
+      { id: 5, activity: "Visite um museu que mostra a história ou arte local", completed: false },
+      { id: 6, activity: "Faça uma caminhada panorâmica ou um passeio pela natureza", completed: false },
+      { id: 7, activity: "Aprenda e pratique um artesanato ou forma de arte local", completed: false },
+      { id: 8, activity: "Assista ao nascer ou pôr do sol em um local pitoresco", completed: false },
+      { id: 9, activity: "Faça amizade com um local e aprenda algo com ele", completed: false },
     ];
   });
 
@@ -85,20 +85,20 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
       const newTodos = prev.map((todo: Todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
       );
-      localStorage.setItem('todos', JSON.stringify(newTodos));
+      localStorage.setItem(`todos-${params.id}`, JSON.stringify(newTodos)); // Chave por usuário
       return newTodos;
     });
   };
-
+  
   const toggleActivity = (id: number) => {
     setActivities((prev: Activity[]) => {
       const newActivities = prev.map((activity: Activity) =>
         activity.id === id ? { ...activity, completed: !activity.completed } : activity
       );
-      localStorage.setItem('activities', JSON.stringify(newActivities));
+      localStorage.setItem(`activities-${params.id}`, JSON.stringify(newActivities)); // Chave por usuário
       return newActivities;
     });
-  };
+  };  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,7 +137,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
             onCheckedChange={setShowGuide}
           />
           <Label htmlFor="guide-mode">
-            {showGuide ? "Show Dashboard" : "Show Guide"}
+            {showGuide ? "Dashboard" : "Guia"}
           </Label>
         </div>
       </header>
@@ -192,9 +192,8 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                       />
                       <label
                         htmlFor={`todo-${todo.id}`}
-                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                          todo.completed ? 'line-through text-muted-foreground' : ''
-                        }`}
+                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${todo.completed ? 'line-through text-muted-foreground' : ''
+                          }`}
                       >
                         {todo.task}
                       </label>
@@ -220,9 +219,8 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                       />
                       <label
                         htmlFor={`activity-${activity.id}`}
-                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                          activity.completed ? 'line-through text-muted-foreground' : ''
-                        }`}
+                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${activity.completed ? 'line-through text-muted-foreground' : ''
+                          }`}
                       >
                         {activity.activity}
                       </label>
@@ -243,19 +241,19 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
             <Tabs defaultValue="itinerary" className="w-full">
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1 p-1"> {/* Updated TabsList */}
                 <TabsTrigger value="itinerary" className="text-xs md:text-sm py-1 px-2">
-                  <Plane className="mr-1 h-3 w-3 md:h-4 md:w-4" /> 
+                  <Plane className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                   <span className="truncate">Itinerário</span>
                 </TabsTrigger>
                 <TabsTrigger value="practical" className="text-xs md:text-sm py-1 px-2">
-                  <Info className="mr-1 h-3 w-3 md:h-4 md:w-4" /> 
+                  <Info className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                   <span className="truncate">Info Prática</span>
                 </TabsTrigger>
                 <TabsTrigger value="culture" className="text-xs md:text-sm py-1 px-2">
-                  <Globe className="mr-1 h-3 w-3 md:h-4 md:w-4" /> 
+                  <Globe className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                   <span className="truncate">Cultura</span>
                 </TabsTrigger>
                 <TabsTrigger value="emergency" className="text-xs md:text-sm py-1 px-2">
-                  <AlertCircle className="mr-1 h-3 w-3 md:h-4 md:w-4" /> 
+                  <AlertCircle className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                   <span className="truncate">Emergência</span>
                 </TabsTrigger>
               </TabsList>
@@ -264,29 +262,40 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                   {travelGuide.itinerary.map((day, index) => (
                     <div key={index}>
                       <h3 className="text-base md:text-lg font-bold mb-2 text-blue-700">{day.dayTitle}</h3>
+
                       <h4 className="text-sm md:text-base font-semibold text-gray-800">Manhã</h4>
                       <ul className="list-disc pl-4 md:pl-5 text-sm md:text-base">
                         {day.morning.map((activity, idx) => (
-                          <li key={idx} className="text-gray-700">{activity}</li>
+                          <li key={idx} className="text-gray-700">
+                            {activity.activity} - <span className="text-green-500">{activity.cost}</span>
+                          </li>
                         ))}
                       </ul>
+
                       <h4 className="font-semibold text-gray-800 mt-3">Tarde</h4>
                       <ul className="list-disc pl-5 text-sm md:text-base">
                         {day.afternoon.map((activity, idx) => (
-                          <li key={idx} className="text-gray-700">{activity}</li>
+                          <li key={idx} className="text-gray-700">
+                            {activity.activity} - <span className="text-green-500">{activity.cost}</span>
+                          </li>
                         ))}
                       </ul>
+
                       <h4 className="font-semibold text-gray-800 mt-3">Noite</h4>
                       <ul className="list-disc pl-5 text-sm md:text-base">
                         {day.evening.map((activity, idx) => (
-                          <li key={idx} className="text-gray-700">{activity}</li>
+                          <li key={idx} className="text-gray-700">
+                            {activity.activity} - <span className="text-green-500">{activity.cost}</span>
+                          </li>
                         ))}
                       </ul>
+
                       <Separator className="my-2" />
                     </div>
                   ))}
                 </ScrollArea>
               </TabsContent>
+
               <TabsContent value="practical">
                 <ScrollArea className="h-[calc(100vh-300px)] md:h-[60vh] w-full rounded-md border p-2 md:p-4">
                   {travelGuide.practicalInfo.map((info, index) => (

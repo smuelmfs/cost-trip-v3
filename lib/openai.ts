@@ -40,32 +40,33 @@ export async function generateDetailedGuide(data: {
   const travelGuideSkeleton = createTravelGuideSkeleton(adjustedDays);
 
   const prompt = `
-You are a professional travel guide and a local citizen from ${destination}. Generate a detailed travel guide in JSON format for the following client:
+Você é um guia de viagens profissional e cidadão local de ${destination}. Gere um guia de viagem detalhado em formato JSON para o seguinte turista:
 
-Client Name: ${userName}
-Destination: ${destination}
-Duration: ${adjustedDays} days (IMPORTANT: DO NOT exceed 30 days)
-Number of People: ${people}
-Travel Style: ${travelStyle}
+Nome do cliente: ${userName}
+Destino: ${destination}
+Duração: ${adjustedDays} dias (IMPORTANTE: NÃO exceder 30 dias)
+Número de pessoas: ${people}
+Estilo de viagem: ${travelStyle}
 ${transportInfo}
 ${mealInfo}
 
-### Instructions:
-1. Complete the provided "itinerary" object with activities for each day (morning, afternoon, evening). **Limit to 2-3 activities per time period for itineraries longer than 15 days.**
-2. For "practicalInfo", "cultureEtiquette", and "emergency" sections:
-   - Each **sectionTitle** must have between **1 and 6 valid details**.
-   - The details must be concise, relevant, and realistic. Avoid redundancy.
-3. Ensure all fields are filled out. Do not include placeholders like "..." or "TBD".
-4. Your output must be a **valid JSON** ready for parsing.
-5. Just do your job, the limit of days is 30 days, COMPLETE all days with activities. The client need activities in the days, you are not answering me someone in a chat so don't generate something like '. . . continue for the next few days' this is your REAL job
+### Instruções:
+1. Preencha o objeto “roteiro” fornecido com as atividades de cada dia (manhã, tarde, noite) e gere quanto mais ou menos o turista gastará na atividade do dia em moeda local (coloque sempre a abreviatura da moeda junto com o valor) . **Limite de 2 a 3 atividades por período para itinerários superiores a 15 dias.**
+2. Lembre-se de levar em consideração o estilo de viagem do viajante na hora de criar uma atividade
+3. Para as seções "informações práticas", "etiqueta cultural" e "emergência":
+   - Cada **sectionTitle** deve ter entre **1 e 6 detalhes válidos**.
+   - Os detalhes devem ser concisos, relevantes e realistas. Evite redundância.
+4. Certifique-se de que todos os campos estejam preenchidos. Não inclua espaços reservados como "..." ou "TBD".
+5. Sua saída deve ser um **JSON válido** pronto para análise.
+6. Basta fazer o seu trabalho, o limite de dias é 30 dias, COMPLETAR todos os dias com atividades. O cliente precisa de atividades nos dias, você não está me respondendo alguém no chat então não gere algo como '. . . continue pelos próximos dias' este é o seu trabalho REAL
 
-### Skeleton for Travel Guide:
+### Esqueleto para guia o de viagem:
 ${JSON.stringify(travelGuideSkeleton, null, 2)}
 
-### Validation Requirements:
-- All **${adjustedDays} days** must be fully detailed with morning, afternoon, and evening activities.
-- The "practicalInfo", "cultureEtiquette", and "emergency" sections must have between **1 and 6 details** per sectionTitle.
-- Output must be valid JSON and ready for parsing.
+### Requisitos de validação:
+- Todos **${adjustedDays} dias** deve ser totalmente detalhado com atividades matinais, vespertinas e noturnas.
+- As seções "informações práticas", "etiqueta cultural" e "emergência" devem ter entre **1 e 6 detalhes** por título da seção.
+- A saída deve ser JSON válida e pronta para análise.
 `;
 
   try {
@@ -117,7 +118,7 @@ function createTravelGuideSkeleton(days: number): any {
   const itinerary = [];
   for (let i = 1; i <= days; i++) {
     itinerary.push({
-      dayTitle: `Day ${i}`,
+      dayTitle: `Dia ${i}`,
       morning: [],
       afternoon: [],
       evening: [],
@@ -125,28 +126,28 @@ function createTravelGuideSkeleton(days: number): any {
   }
 
   const practicalInfo = [
-    { sectionTitle: "Transportation", details: [] },
-    { sectionTitle: "Currency", details: [] },
-    { sectionTitle: "Weather", details: [] },
-    { sectionTitle: "Language", details: [] },
-    { sectionTitle: "Shopping Tips", details: [] },
+    { sectionTitle: "Transporte", details: [] },
+    { sectionTitle: "Moeda", details: [] },
+    { sectionTitle: "Clima", details: [] },
+    { sectionTitle: "Língua Local", details: [] },
+    { sectionTitle: "Dicas de Compras", details: [] },
   ];
 
   const cultureEtiquette = [
-    { sectionTitle: "Greetings", details: [] },
-    { sectionTitle: "Dining Etiquette", details: [] },
-    { sectionTitle: "Dress Code", details: [] },
-    { sectionTitle: "Social Customs", details: [] },
-    { sectionTitle: "Museums and Monuments", details: [] },
+    { sectionTitle: "Saudações", details: [] },
+    { sectionTitle: "Etiqueta de Alimentação", details: [] },
+    { sectionTitle: "Código de Vestimenta", details: [] },
+    { sectionTitle: "Costumes Sociais", details: [] },
+    { sectionTitle: "Museus e Monumentos", details: [] },
   ];
 
   const emergency = [
-    { sectionTitle: "Emergency Numbers", details: [] },
-    { sectionTitle: "Pharmacies", details: [] },
-    { sectionTitle: "Hospitals", details: [] },
-    { sectionTitle: "Embassy Contact", details: [] },
-    { sectionTitle: "Safety Tips", details: [] },
-    { sectionTitle: "Useful Phrases in an Emergency", details: [] },
+    { sectionTitle: "Números de emergência", details: [] },
+    { sectionTitle: "Farmácias", details: [] },
+    { sectionTitle: "Hospitais", details: [] },
+    { sectionTitle: "Contato da Embaixada", details: [] },
+    { sectionTitle: "Dicas de segurança", details: [] },
+    { sectionTitle: "Frases úteis em uma emergência", details: [] },
   ];
 
   return { itinerary, practicalInfo, cultureEtiquette, emergency };

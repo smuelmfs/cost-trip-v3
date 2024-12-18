@@ -1,5 +1,6 @@
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import Image from 'next/image';
 
 export const FooterSection = () => {
   return (
@@ -7,10 +8,14 @@ export const FooterSection = () => {
       <div className="p-6 bg-card border border-secondary rounded-2xl text-center">
         {/* Logo e Nome */}
         <div className="flex justify-center items-center mb-6">
-          <div className="w-9 h-9 bg-gradient-to-tr from-primary via-primary/70 to-primary rounded-lg border border-secondary flex justify-center items-center text-white font-bold">
-            C
-          </div>
-          <h3 className="text-2xl font-bold ml-2 text-primary">Costimizer</h3>
+          <Image
+            width={50}
+            height={50}
+            className="w-9 h-9 rounded-lg border border-secondary"
+            src="/icon.png"
+            alt="Costimizer Logo"
+          />
+          <h3 className="text-2xl font-bold ml-2">Costimizer</h3>
         </div>
 
         {/* Links principais */}
