@@ -21,7 +21,7 @@ interface TravelGuide {
 
 export default function DashboardPage({ params }: { params: { id: string } }) {
   const [travelGuide, setTravelGuide] = useState<TravelGuide | null>(null);
-  const [userData, setUserData] = useState<{ userName: string; destination: string } | null>(null);
+  const [userData, setUserData] = useState<{ userName: string; destination: string; travelStyle: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const router = useRouter();
@@ -33,7 +33,11 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         if (!response.ok) throw new Error("Failed to fetch user data");
         const data = await response.json();
 
-        setUserData({ userName: data.data.userName, destination: data.data.destination });
+        setUserData({
+          userName: data.data.userName,
+          destination: data.data.destination,
+          travelStyle: data.data.travelStyle
+        });
         setTravelGuide(JSON.parse(data.documentContent));
       } catch (error) {
         console.error(error);
@@ -51,7 +55,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
   return (
     <div className="container mx-auto p-4">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Travel Dashboard for {userData.userName}</h1>
+        <h1 className="text-3xl font-bold">Olá, {userData.userName}!</h1>
         <div className="flex items-center space-x-2">
           <Switch
             id="guide-mode"
@@ -67,27 +71,27 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
       {!showGuide ? (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Trip Overview</CardTitle>
-            <CardDescription>Your journey at a glance</CardDescription>
+            <CardTitle>Visão geral da viagem:</CardTitle>
+            <CardDescription>Sua jornada em resumo</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex space-x-4 text-center">
               <div>
                 <Plane className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-                <p className="text-sm font-medium">{travelGuide.itinerary.length} Days</p>
-                <p className="text-xs text-muted-foreground">Duration</p>
+                <p className="text-sm font-medium">{travelGuide.itinerary.length} Dias</p>
+                <p className="text-xs text-muted-foreground">Duração</p>
               </div>
               <Separator orientation="vertical" />
               <div>
                 <MapPin className="h-6 w-6 mx-auto mb-2 text-green-500" />
                 <p className="text-sm font-medium">{userData.destination}</p>
-                <p className="text-xs text-muted-foreground">Destination</p>
+                <p className="text-xs text-muted-foreground">Destino</p>
               </div>
               <Separator orientation="vertical" />
               <div>
                 <CheckSquare className="h-6 w-6 mx-auto mb-2 text-purple-500" />
-                <p className="text-sm font-medium">Comfort</p>
-                <p className="text-xs text-muted-foreground">Style</p>
+                <p className="text-sm font-medium">{userData.travelStyle}</p>
+                <p className="text-xs text-muted-foreground">Estilo de viagem</p>
               </div>
             </div>
           </CardContent>
@@ -95,23 +99,23 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
       ) : (
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Your Comprehensive Travel Guide</CardTitle>
-            <CardDescription>Everything you need to know for your trip</CardDescription>
+            <CardTitle>Seu guia de viagem</CardTitle>
+            <CardDescription>Tudo o que você precisa saber sobre a sua viagem está aqui!</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="itinerary" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="itinerary">
-                  <Plane className="mr-2 h-4 w-4" /> Itinerary
+                  <Plane className="mr-2 h-4 w-4" /> Itinerário
                 </TabsTrigger>
                 <TabsTrigger value="practical">
-                  <Info className="mr-2 h-4 w-4" /> Practical Info
+                  <Info className="mr-2 h-4 w-4" /> Informações Práticas
                 </TabsTrigger>
                 <TabsTrigger value="culture">
-                  <Globe className="mr-2 h-4 w-4" /> Culture & Etiquette
+                  <Globe className="mr-2 h-4 w-4" /> Cultura & Etiqueta
                 </TabsTrigger>
                 <TabsTrigger value="emergency">
-                  <AlertCircle className="mr-2 h-4 w-4" /> Emergency
+                  <AlertCircle className="mr-2 h-4 w-4" /> Emergência
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="itinerary">
@@ -119,19 +123,19 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                   {travelGuide.itinerary.map((day, index) => (
                     <div key={index}>
                       <h3 className="text-lg font-bold mb-2 text-blue-700">{day.dayTitle}</h3>
-                      <h4 className="font-semibold text-gray-800">Morning</h4>
+                      <h4 className="font-semibold text-gray-800">Manhã</h4>
                       <ul className="list-disc pl-5">
                         {day.morning.map((activity, idx) => (
                           <li key={idx} className="text-gray-700">{activity}</li>
                         ))}
                       </ul>
-                      <h4 className="font-semibold text-gray-800 mt-3">Afternoon</h4>
+                      <h4 className="font-semibold text-gray-800 mt-3">Tarde</h4>
                       <ul className="list-disc pl-5">
                         {day.afternoon.map((activity, idx) => (
                           <li key={idx} className="text-gray-700">{activity}</li>
                         ))}
                       </ul>
-                      <h4 className="font-semibold text-gray-800 mt-3">Evening</h4>
+                      <h4 className="font-semibold text-gray-800 mt-3">Noite</h4>
                       <ul className="list-disc pl-5">
                         {day.evening.map((activity, idx) => (
                           <li key={idx} className="text-gray-700">{activity}</li>
