@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     } = body;
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      payment_method_types: ["card","boleto"],
       customer_email: userEmail,
       line_items: [
         {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       ],
       mode: "payment",
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/create`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/cancel`,
       metadata: {
         userName,
         userEmail,
