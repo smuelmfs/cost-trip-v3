@@ -41,8 +41,8 @@ const formSchema = z.object({
   days: z
     .string()
     .regex(/^\d+$/, "Insira um número positivo.")
-    .refine((value) => parseInt(value) <= 30, {
-      message: "O máximo permitido são 30 dias.",
+    .refine((value) => parseInt(value) <= 25, {
+      message: "O máximo permitido por enquanto são 25 dias.",
     }),
   people: z.string().regex(/^\d+$/, "Insira um número positivo."),
   travelStyle: z.string({

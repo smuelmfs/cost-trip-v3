@@ -25,7 +25,7 @@ export async function generateDetailedGuide(data: {
     mealType,
   } = data;
 
-  const MAX_DAYS = 30;
+  const MAX_DAYS = 25;
   const adjustedDays = Math.min(parseInt(days), MAX_DAYS);
 
   const transportInfo = includeTransport
@@ -44,7 +44,7 @@ Você é um guia de viagens profissional e cidadão local de ${destination}. Ger
 
 Nome do cliente: ${userName}
 Destino: ${destination}
-Duração: ${adjustedDays} dias (IMPORTANTE: NÃO exceder 30 dias)
+Duração: ${adjustedDays} dias (IMPORTANTE: NÃO exceder 25 dias)
 Número de pessoas: ${people}
 Estilo de viagem: ${travelStyle}
 ${transportInfo}
@@ -58,7 +58,7 @@ ${mealInfo}
    - Os detalhes devem ser concisos, relevantes e realistas. Evite redundância.
 4. Certifique-se de que todos os campos estejam preenchidos. Não inclua espaços reservados como "..." ou "TBD".
 5. Sua saída deve ser um **JSON válido** pronto para análise.
-6. Basta fazer o seu trabalho, o limite de dias é 30 dias, COMPLETAR todos os dias com atividades. O cliente precisa de atividades nos dias, você não está me respondendo alguém no chat então não gere algo como '. . . continue pelos próximos dias' este é o seu trabalho REAL
+6. Basta fazer o seu trabalho, o limite de dias é 25 dias, COMPLETAR todos os dias com atividades. O cliente precisa de atividades nos dias, você não está me respondendo alguém no chat então não gere algo como '. . . continue pelos próximos dias' este é o seu trabalho REAL
 
 ### Esqueleto para guia o de viagem:
 ${JSON.stringify(travelGuideSkeleton, null, 2)}
@@ -74,7 +74,7 @@ ${JSON.stringify(travelGuideSkeleton, null, 2)}
 
     while (attempts < 3) {
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4-turbo",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 4000,
       });
