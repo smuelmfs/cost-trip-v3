@@ -5,12 +5,7 @@ import User from "../../models/User";
 import { Resend } from "resend";
 import { generateDetailedGuide } from "@/lib/openai";
 
-// Configuração para garantir que o corpo seja "raw"
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = "force-dynamic";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2024-11-20.acacia",
