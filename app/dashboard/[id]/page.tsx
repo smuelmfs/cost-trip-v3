@@ -192,7 +192,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                       />
                       <label
                         htmlFor={`todo-${todo.id}`}
-                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${todo.completed ? 'line-through text-muted-foreground' : ''
+                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${todo.completed ? 'line-through text-muted-foreground dark:text-gray-500' : ''
                           }`}
                       >
                         {todo.task}
@@ -219,7 +219,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                       />
                       <label
                         htmlFor={`activity-${activity.id}`}
-                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${activity.completed ? 'line-through text-muted-foreground' : ''
+                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${activity.completed ? 'line-through text-muted-foreground dark:text-gray-500' : ''
                           }`}
                       >
                         {activity.activity}
@@ -235,7 +235,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         <Card className="w-full">
           <CardHeader className="p-4 md:p-6">
             <CardTitle className="text-xl md:text-2xl">Seu guia de viagem</CardTitle>
-            <CardDescription className="text-sm md:text-base">Tudo o que você precisa saber sobre a sua viagem está aqui!</CardDescription>
+            <CardDescription className="text-sm md:text-base text-muted-foreground dark:text-gray-400">Tudo o que você precisa saber sobre a sua viagem está aqui!</CardDescription>
           </CardHeader>
           <CardContent className="p-1 md:p-6"> {/* Updated padding */}
             <Tabs defaultValue="itinerary" className="w-full">
@@ -261,30 +261,30 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                 <ScrollArea className="h-[calc(100vh-300px)] md:h-[60vh] w-full rounded-md border p-2 md:p-4">
                   {travelGuide.itinerary.map((day, index) => (
                     <div key={index}>
-                      <h3 className="text-base md:text-lg font-bold mb-2 text-blue-700">{day.dayTitle}</h3>
+                      <h3 className="text-base md:text-lg font-bold mb-2 text-blue-700 dark:text-blue-300">{day.dayTitle}</h3>
 
-                      <h4 className="text-sm md:text-base font-semibold text-gray-800">Manhã</h4>
+                      <h4 className="text-sm md:text-base font-semibold text-gray-800 dark:text-gray-100">Manhã</h4>
                       <ul className="list-disc pl-4 md:pl-5 text-sm md:text-base">
                         {day.morning.map((activity, idx) => (
-                          <li key={idx} className="text-gray-700">
+                          <li key={idx} className="text-gray-700 dark:text-gray-200">
                             {activity.activity} - <span className="text-green-500">{activity.cost}</span>
                           </li>
                         ))}
                       </ul>
 
-                      <h4 className="font-semibold text-gray-800 mt-3">Tarde</h4>
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-100 mt-3">Tarde</h4>
                       <ul className="list-disc pl-5 text-sm md:text-base">
                         {day.afternoon.map((activity, idx) => (
-                          <li key={idx} className="text-gray-700">
+                          <li key={idx} className="text-gray-700 dark:text-gray-200">
                             {activity.activity} - <span className="text-green-500">{activity.cost}</span>
                           </li>
                         ))}
                       </ul>
 
-                      <h4 className="font-semibold text-gray-800 mt-3">Noite</h4>
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-100 mt-3">Noite</h4>
                       <ul className="list-disc pl-5 text-sm md:text-base">
                         {day.evening.map((activity, idx) => (
-                          <li key={idx} className="text-gray-700">
+                          <li key={idx} className="text-gray-700 dark:text-gray-200">
                             {activity.activity} - <span className="text-green-500">{activity.cost}</span>
                           </li>
                         ))}
@@ -300,10 +300,10 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                 <ScrollArea className="h-[calc(100vh-300px)] md:h-[60vh] w-full rounded-md border p-2 md:p-4">
                   {travelGuide.practicalInfo.map((info, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-bold mb-2 text-green-700">{info.sectionTitle}</h3>
+                      <h3 className="text-lg font-bold mb-2 text-green-700 dark:text-green-300">{info.sectionTitle}</h3>
                       <ul className="list-disc pl-5">
                         {info.details.map((detail, idx) => (
-                          <li key={idx} className="text-gray-700">{detail}</li>
+                          <li key={idx} className="text-gray-700 dark:text-gray-200">{detail}</li>
                         ))}
                       </ul>
                       <Separator className="my-2" />
@@ -316,10 +316,10 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                 <ScrollArea className="h-[calc(100vh-300px)] md:h-[60vh] w-full rounded-md border p-2 md:p-4">
                   {travelGuide.cultureEtiquette.map((item, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-bold mb-2 text-purple-700">{item.sectionTitle}</h3>
+                      <h3 className="text-lg font-bold mb-2 text-purple-700 dark:text-purple-300">{item.sectionTitle}</h3>
                       <ul className="list-disc pl-5">
                         {item.details.map((detail, idx) => (
-                          <li key={idx} className="text-gray-700">{detail}</li>
+                          <li key={idx} className="text-gray-700 dark:text-gray-200">{detail}</li>
                         ))}
                       </ul>
                       <Separator className="my-2" />
@@ -332,10 +332,10 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
                 <ScrollArea className="h-[calc(100vh-300px)] md:h-[60vh] w-full rounded-md border p-2 md:p-4">
                   {travelGuide.emergency.map((item, index) => (
                     <div key={index}>
-                      <h3 className="text-lg font-bold mb-2 text-red-700">{item.sectionTitle}</h3>
+                      <h3 className="text-lg font-bold mb-2 text-red-700 dark:text-red-300">{item.sectionTitle}</h3>
                       <ul className="list-disc pl-5">
                         {item.details.map((detail, idx) => (
-                          <li key={idx} className="text-gray-700">{detail}</li>
+                          <li key={idx} className="text-gray-700 dark:text-gray-200">{detail}</li>
                         ))}
                       </ul>
                       <Separator className="my-2" />

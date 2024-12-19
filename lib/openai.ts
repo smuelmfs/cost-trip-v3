@@ -51,14 +51,14 @@ ${transportInfo}
 ${mealInfo}
 
 ### Instruções:
-1. Preencha o objeto “roteiro” fornecido com as atividades de cada dia (manhã, tarde, noite) e gere quanto mais ou menos o turista gastará na atividade do dia em moeda local (coloque sempre a abreviatura da moeda junto com o valor) . **Limite de 2 a 3 atividades por período para itinerários superiores a 15 dias.**
+1. Preencha o objeto “roteiro” fornecido com as atividades de cada dia (manhã, tarde, noite) usando os campos “activity” para descrever a atividade e gere quanto mais ou menos o turista gastará na atividade do dia em moeda local usando o campo "cost" (coloque sempre a abreviatura da moeda junto com o valor) . **Limite de 2 a 3 atividades por período para itinerários superiores a 15 dias.**
 2. Lembre-se de levar em consideração o estilo de viagem do viajante na hora de criar uma atividade
 3. Para as seções "informações práticas", "etiqueta cultural" e "emergência":
    - Cada **sectionTitle** deve ter entre **1 e 6 detalhes válidos**.
    - Os detalhes devem ser concisos, relevantes e realistas. Evite redundância.
 4. Certifique-se de que todos os campos estejam preenchidos. Não inclua espaços reservados como "..." ou "TBD".
 5. Sua saída deve ser um **JSON válido** pronto para análise.
-6. Basta fazer o seu trabalho, o limite de dias é 25 dias, COMPLETAR todos os dias com atividades. O cliente precisa de atividades nos dias, você não está me respondendo alguém no chat então não gere algo como '. . . continue pelos próximos dias' este é o seu trabalho REAL
+6. Basta fazer o seu trabalho (o limite de dias é 25 dias), COMPLETAR todos os dias com atividades. O cliente precisa de atividades nos dias, você não está me respondendo alguém no chat então não gere algo como '. . . continue pelos próximos dias' este é o seu trabalho REAL
 
 ### Esqueleto para guia o de viagem:
 ${JSON.stringify(travelGuideSkeleton, null, 2)}
@@ -74,7 +74,7 @@ ${JSON.stringify(travelGuideSkeleton, null, 2)}
 
     while (attempts < 3) {
       const response = await openai.chat.completions.create({
-        model: "gpt-4-turbo",
+        model: "gpt-4",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 4000,
       });
@@ -119,9 +119,9 @@ function createTravelGuideSkeleton(days: number): any {
   for (let i = 1; i <= days; i++) {
     itinerary.push({
       dayTitle: `Dia ${i}`,
-      morning: [],
-      afternoon: [],
-      evening: [],
+      morning: [{ activity: "", cost: 0 }],
+      afternoon: [{ activity: "", cost: 0 }],
+      evening: [{ activity: "", cost: 0 }],
     });
   }
 
@@ -164,9 +164,12 @@ function validateGuideCompletion(guide: any, skeleton: any): any {
 
   // Ensure all activities are filled
   guide.itinerary.forEach((day: any, index: number) => {
-    if (!day.morning?.length || !day.afternoon?.length || !day.evening?.length) {
-      throw new Error(`Day ${index + 1} is incomplete in the itinerary.`);
-    }
+    const periods = ["morning", "afternoon", "evening"];
+    periods.forEach((period) => {
+      if (!Array.isArray(day[period]) || day[period].some((activity: any) => !activity.activity)) {
+        throw new Error(`Day ${index + 1} has incomplete activities in the ${period} period.`);
+      }
+    });
   });
 
   // Validate sections with flexibility (1-6 details)
