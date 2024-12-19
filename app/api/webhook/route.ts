@@ -5,7 +5,8 @@ import User from "../../models/User";
 import { Resend } from "resend";
 import { generateDetailedGuide } from "@/lib/openai";
 
-export const dynamic = "force-dynamic";
+// Configuração para o runtime de Node.js
+export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2024-11-20.acacia",
@@ -38,40 +39,24 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Obter o corpo raw
     const buf = await buffer(req.body);
 
     let event;
     try {
-      // Validar a assinatura do webhook
       event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_SECRET_WEBHOOK!);
     } catch (err) {
-      if (err instanceof Error) {
-        console.error("Webhook signature verification failed.", err.message);
-        return new Response("Webhook signature verification failed.", { status: 400 });
-      } else {
-        console.error("Unknown error during webhook signature verification.", err);
-        return new Response("Unknown error", { status: 400 });
-      }
+      console.error("Webhook signature verification failed:", err);
+      return new Response("Webhook signature verification failed.", { status: 400 });
     }
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-
-      // Inicie o processamento de forma assíncrona (não bloqueia o retorno ao Stripe)
-      processWebhookEvent(session).catch((err) => {
-        console.error("Erro ao processar o webhook:", err);
-      });
+      processWebhookEvent(session).catch((err) => console.error("Erro ao processar o webhook:", err));
     }
 
-    // Retorne imediatamente ao Stripe
     return new Response("Webhook received", { status: 200 });
   } catch (err) {
-    if (err instanceof Error) {
-      console.error("Unexpected error:", err.message);
-    } else {
-      console.error("Unknown error:", err);
-    }
+    console.error("Unexpected error:", err);
     return new Response("Internal Server Error", { status: 500 });
   }
 }
@@ -81,11 +66,9 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
     const metadata = session.metadata!;
     console.log("Received session metadata:", metadata);
 
-    // Conectar ao MongoDB
     await connectDB();
     console.log("Connected to MongoDB.");
 
-    // Gerar conteúdo com OpenAI
     const documentContent = await generateDetailedGuide({
       userName: metadata.userName,
       destination: metadata.destination,
@@ -97,7 +80,6 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
       includeMeals: metadata.includeMeals ? "true" : "false",
     });
 
-    // Salvar no banco de dados
     const user = await User.create({
       email: metadata.userEmail,
       data: metadata,
@@ -105,7 +87,6 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
     });
     console.log("Saved user to MongoDB:", user);
 
-    // Enviar e-mail com link
     await resend.emails.send({
       from: process.env.FROM_EMAIL!,
       to: metadata.userEmail,
