@@ -16,6 +16,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Função auxiliar para capturar o corpo "raw"
 async function buffer(readable: ReadableStream<Uint8Array> | null) {
   if (!readable) {
+    console.error("ReadableStream is null");
     throw new Error("ReadableStream is null");
   }
   const reader = readable.getReader();
@@ -25,50 +26,66 @@ async function buffer(readable: ReadableStream<Uint8Array> | null) {
   while (!done) {
     const { done: isDone, value } = await reader.read();
     done = isDone;
-    if (value) chunks.push(value);
+    if (value) {
+      console.log("Chunk lido do corpo:", value);
+      chunks.push(value);
+    }
   }
 
   return Buffer.concat(chunks);
 }
 
 export async function POST(req: Request) {
+  console.log("Recebendo requisição no webhook...");
   const sig = req.headers.get("stripe-signature");
 
   if (!sig) {
+    console.error("Faltando assinatura do Stripe.");
     return new Response("Missing Stripe signature", { status: 400 });
   }
 
   try {
+    console.log("Iniciando leitura do corpo...");
     const buf = await buffer(req.body);
+    console.log("Corpo recebido:", buf.toString());
 
     let event;
     try {
+      console.log("Verificando assinatura do webhook...");
       event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_SECRET_WEBHOOK!);
+      console.log("Evento verificado com sucesso:", event.type);
     } catch (err) {
-      console.error("Webhook signature verification failed:", err);
+      console.error("Falha na verificação da assinatura do webhook:", err);
       return new Response("Webhook signature verification failed.", { status: 400 });
     }
 
     if (event.type === "checkout.session.completed") {
+      console.log("Evento 'checkout.session.completed' recebido.");
       const session = event.data.object as Stripe.Checkout.Session;
+      console.log("Dados da sessão:", session);
       processWebhookEvent(session).catch((err) => console.error("Erro ao processar o webhook:", err));
+    } else {
+      console.log("Tipo de evento ignorado:", event.type);
     }
 
     return new Response("Webhook received", { status: 200 });
   } catch (err) {
-    console.error("Unexpected error:", err);
+    console.error("Erro inesperado no webhook:", err);
     return new Response("Internal Server Error", { status: 500 });
   }
 }
 
 async function processWebhookEvent(session: Stripe.Checkout.Session) {
   try {
+    console.log("Iniciando processamento do evento...");
     const metadata = session.metadata!;
-    console.log("Received session metadata:", metadata);
+    console.log("Metadados recebidos:", metadata);
 
+    console.log("Conectando ao MongoDB...");
     await connectDB();
-    console.log("Connected to MongoDB.");
+    console.log("Conexão com MongoDB bem-sucedida.");
 
+    console.log("Gerando guia detalhado com OpenAI...");
     const documentContent = await generateDetailedGuide({
       userName: metadata.userName,
       destination: metadata.destination,
@@ -79,14 +96,17 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
       transportType: metadata.transportType,
       includeMeals: metadata.includeMeals ? "true" : "false",
     });
+    console.log("Guia gerado:", documentContent);
 
+    console.log("Salvando usuário no MongoDB...");
     const user = await User.create({
       email: metadata.userEmail,
       data: metadata,
       documentContent: JSON.stringify(documentContent),
     });
-    console.log("Saved user to MongoDB:", user);
+    console.log("Usuário salvo no MongoDB:", user);
 
+    console.log("Enviando e-mail...");
     await resend.emails.send({
       from: process.env.FROM_EMAIL!,
       to: metadata.userEmail,
