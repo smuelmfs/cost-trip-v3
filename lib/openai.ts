@@ -82,7 +82,7 @@ ${JSON.stringify(travelGuideSkeleton, null, 2)}
       const response = await openai.chat.completions.create({
         model: "gpt-4", // Pode considerar 'gpt-3.5-turbo' para testes mais baratos e rápidos
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 2000, // Reduzido de 4000 para tentar economizar tokens
+        max_tokens: 3500, // Reduzido de 4000 para tentar economizar tokens
       });
 
       console.log("Resposta do OpenAI:", JSON.stringify(response, null, 2));
