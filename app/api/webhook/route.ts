@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import db from "@/lib/firebase";
 import { Resend } from "resend";
 import { generateDetailedGuide } from "@/lib/openai";
@@ -9,16 +9,14 @@ import { Readable } from "stream";
 import crypto from "crypto";
 
 // Configuração para o runtime de Node.js
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-export const preferredRegion = 'auto';
-
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const preferredRegion = "auto";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2024-11-20.acacia",
 });
 const resend = new Resend(process.env.RESEND_API_KEY);
-
 
 // Função para gerar hash único
 function generateUniqueId(email: string): string {
@@ -26,17 +24,33 @@ function generateUniqueId(email: string): string {
   return crypto.createHash("sha256").update(uniqueComponent).digest("hex").slice(0, 16);
 }
 
+// Verifica se o evento já foi processado (idempotência)
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  const eventRef = doc(db, "processedEvents", eventId);
+  const eventDoc = await getDoc(eventRef);
+  console.log(`Verificando se o evento ${eventId} já foi processado:`, eventDoc.exists());
+  return eventDoc.exists();
+}
+
+// Marca o evento como processado
+async function markEventAsProcessed(eventId: string): Promise<void> {
+  const eventRef = doc(db, "processedEvents", eventId);
+  console.log(`Marcando o evento ${eventId} como processado.`);
+  await setDoc(eventRef, { processedAt: new Date() });
+}
 
 export async function POST(req: Request) {
   console.log("Recebendo requisição no webhook...");
   const sig = req.headers.get("stripe-signature");
 
   if (!sig) {
+    console.error("Erro: Stripe signature ausente.");
     return new Response("Missing Stripe signature", { status: 400 });
   }
 
   try {
     // Converter o corpo para um stream legível
+    console.log("Preparando para verificar assinatura do Stripe...");
     const readableBody = Readable.from(req.body as any);
 
     // Usar `getRawBody` com o stream legível
@@ -46,25 +60,19 @@ export async function POST(req: Request) {
     });
 
     let event;
-
     try {
       // Verificar assinatura do webhook
-      event = stripe.webhooks.constructEvent(
-        buf,
-        sig,
-        process.env.STRIPE_SECRET_WEBHOOK!
-      );
+      event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_SECRET_WEBHOOK!);
       console.log("Evento verificado com sucesso:", event.type);
     } catch (err) {
       console.error("Erro na verificação da assinatura do webhook:", err);
-      return new Response("Webhook signature verification failed.", {
-        status: 400,
-      });
+      return new Response("Webhook signature verification failed.", { status: 400 });
     }
 
-    // Lidar com tipos de evento específicos
+    // Verificar e processar o evento
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+      console.log("Processando evento checkout.session.completed...");
       await processWebhookEvent(session);
     }
 
@@ -80,7 +88,14 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
     const metadata = session.metadata!;
     console.log("Metadados recebidos:", metadata);
 
+    // Verificar idempotência do evento
+    if (await isEventProcessed(session.id)) {
+      console.log(`Evento ${session.id} já processado. Abortando...`);
+      return;
+    }
+
     // Gerar guia com OpenAI
+    console.log("Gerando guia de viagem com OpenAI...");
     const documentContent = await generateDetailedGuide({
       userName: metadata.userName,
       destination: metadata.destination,
@@ -90,11 +105,14 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
       includeTransport: metadata.includeTransport === "true" ? "true" : "false",
       includeMeals: metadata.includeMeals === "true" ? "true" : "false",
     });
+    console.log("Guia gerado com sucesso.");
 
     // Gerar ID único para o usuário baseado no email e timestamp
     const userId = generateUniqueId(metadata.userEmail);
+    console.log(`ID único gerado para o usuário: ${userId}`);
 
     // Salvar no Firestore
+    console.log("Salvando dados no Firestore...");
     const userData = {
       email: metadata.userEmail,
       data: metadata,
@@ -104,7 +122,12 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
     await setDoc(doc(db, "users", userId), userData);
     console.log(`Usuário salvo no Firestore com ID: ${userId}`);
 
+    // Marcar evento como processado
+    console.log("Marcando evento como processado...");
+    await markEventAsProcessed(session.id);
+
     // Enviar e-mail
+    console.log("Enviando e-mail para o usuário...");
     await resend.emails.send({
       from: process.env.FROM_EMAIL!,
       to: metadata.userEmail,
@@ -150,7 +173,7 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
       </html>
     `,
     });
-    console.log("E-mail enviado para:", metadata.userEmail);
+    console.log("E-mail enviado com sucesso para:", metadata.userEmail);
   } catch (err) {
     console.error("Erro ao processar evento:", err);
   }
