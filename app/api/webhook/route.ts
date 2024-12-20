@@ -94,7 +94,11 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
       return;
     }
 
-    // Gerar guia com OpenAI
+    // Validar metadados
+    if (!metadata.userEmail || !metadata.userName || !metadata.destination) {
+      throw new Error("Metadados inválidos detectados.");
+    }
+
     console.log("Gerando guia de viagem com OpenAI...");
     const documentContent = await generateDetailedGuide({
       userName: metadata.userName,
@@ -107,26 +111,22 @@ async function processWebhookEvent(session: Stripe.Checkout.Session) {
     });
     console.log("Guia gerado com sucesso.");
 
-    // Gerar ID único para o usuário baseado no email e timestamp
     const userId = generateUniqueId(metadata.userEmail);
     console.log(`ID único gerado para o usuário: ${userId}`);
 
-    // Salvar no Firestore
-    console.log("Salvando dados no Firestore...");
     const userData = {
       email: metadata.userEmail,
       data: metadata,
       documentContent,
     };
+    console.log("Dados a serem enviados para o Firestore:", userData);
 
     await setDoc(doc(db, "users", userId), userData);
     console.log(`Usuário salvo no Firestore com ID: ${userId}`);
 
-    // Marcar evento como processado
-    console.log("Marcando evento como processado...");
     await markEventAsProcessed(session.id);
+    console.log("Evento marcado como processado.");
 
-    // Enviar e-mail
     console.log("Enviando e-mail para o usuário...");
     await resend.emails.send({
       from: process.env.FROM_EMAIL!,
