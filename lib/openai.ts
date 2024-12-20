@@ -26,7 +26,10 @@ export async function generateDetailedGuide(data: {
   } = data;
 
   const MAX_DAYS = 25;
-  const adjustedDays = Math.min(parseInt(days), MAX_DAYS);
+  const adjustedDays = Math.min(parseInt(days) || 1, MAX_DAYS); // Fallback para 1 se não for um número válido
+
+  console.log("Dados recebidos:", JSON.stringify(data, null, 2));
+  console.log("Dias ajustados:", adjustedDays);
 
   const transportInfo = includeTransport
     ? `Include Transport: Yes (${transportType || "General transport"})`
@@ -51,7 +54,7 @@ ${transportInfo}
 ${mealInfo}
 
 ### Instruções:
-1. Preencha o objeto “roteiro” fornecido com as atividades de cada dia (manhã, tarde, noite) usando os campos “activity” para descrever a atividade e gere quanto mais ou menos o turista gastará na atividade do dia em moeda local usando o campo "cost" (coloque sempre a abreviatura da moeda junto com o valor) . **Limite de 2 a 3 atividades por período para itinerários superiores a 15 dias.**
+1. Preencha o objeto “roteiro” fornecido com as atividades de cada dia (manhã, tarde, noite) usando os campos “activity” para descrever a atividade e gere quanto mais ou menos o turista gastará na atividade do dia em moeda local usando o campo "cost" (coloque sempre a abreviatura da moeda junto com o valor). **Limite de 2 a 3 atividades por período para itinerários superiores a 15 dias.**
 2. Lembre-se de levar em consideração o estilo de viagem do viajante na hora de criar uma atividade
 3. Para as seções "informações práticas", "etiqueta cultural" e "emergência":
    - Cada **sectionTitle** deve ter entre **1 e 6 detalhes válidos**.
@@ -69,19 +72,25 @@ ${JSON.stringify(travelGuideSkeleton, null, 2)}
 - A saída deve ser JSON válida e pronta para análise.
 `;
 
+  console.log("Prompt enviado para OpenAI:", prompt);
+
   try {
     let attempts = 0;
 
     while (attempts < 3) {
+      console.log(`Tentativa ${attempts + 1} de geração do guia...`);
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4", // Pode considerar 'gpt-3.5-turbo' para testes mais baratos e rápidos
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 4000,
+        max_tokens: 2000, // Reduzido de 4000 para tentar economizar tokens
       });
+
+      console.log("Resposta do OpenAI:", JSON.stringify(response, null, 2));
 
       const content = response.choices?.[0]?.message?.content;
 
       if (!content) {
+        console.warn("Nenhuma resposta recebida de OpenAI.");
         throw new Error("No content returned from OpenAI API.");
       }
 
@@ -89,6 +98,8 @@ ${JSON.stringify(travelGuideSkeleton, null, 2)}
       const sanitizedContent = content
         .replace(/\/\/.*$/gm, "") // Remove comments
         .replace(/\,(?=\s*?[\}\]])/g, ""); // Remove trailing commas
+
+      console.log("Conteúdo sanitizado:", sanitizedContent);
 
       try {
         const structuredResponse = JSON.parse(sanitizedContent.trim());
@@ -99,16 +110,20 @@ ${JSON.stringify(travelGuideSkeleton, null, 2)}
           travelGuideSkeleton
         );
 
+        console.log("Guia de viagem gerado e validado:", JSON.stringify(validatedResponse, null, 2));
         return validatedResponse;
       } catch (error) {
-        console.warn("Validation failed. Retrying...");
+        console.error("Erro ao validar o guia:", error);
         attempts++;
       }
     }
 
     throw new Error("Failed to generate a valid travel guide after multiple attempts.");
   } catch (error) {
-    console.error("Error generating travel guide:", error);
+    console.error("Erro ao gerar o guia de viagem:", error);
+    if (error instanceof OpenAI.APIError) {
+      console.error('OpenAI API Error:', error.message);
+    }
     throw new Error("Failed to generate travel guide.");
   }
 }
