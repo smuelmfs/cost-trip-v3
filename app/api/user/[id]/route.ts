@@ -1,29 +1,36 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import User from "../../../models/User";
-import mongoose from "mongoose";
+import { doc, getDoc } from "firebase/firestore";
+import db from "@/lib/firebase";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
-    await connectDB();
+    console.log(`Fetching user data for ID: ${params.id}`); // Log para depuração
 
-    // Validar se o id é um ObjectId válido
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
-      return NextResponse.json({ error: "Invalid user ID format" }, { status: 400 });
-    }
+    // Busca o usuário no Firestore
+    const docRef = doc(db, "users", params.id);
+    const docSnap = await getDoc(docRef);
 
-    // Busca o usuário no banco de dados
-    const user = await User.findById(params.id);
-    if (!user) {
+    if (!docSnap.exists()) {
+      console.warn(`User not found for ID: ${params.id}`); // Log para casos de não encontrado
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const user = docSnap.data();
+
+    // Validação adicional para garantir que os dados esperados estão presentes
+    if (!user.data || !user.documentContent) {
+      console.error(`Incomplete user data for ID: ${params.id}`);
+      return NextResponse.json({ error: "Incomplete user data" }, { status: 500 });
+    }
+
+    console.log(`User data fetched successfully for ID: ${params.id}`); // Log de sucesso
+
     return NextResponse.json({
-      data: user.data, // Retorna os metadados como travelStyle
-      documentContent: user.documentContent, // O guia completo
+      data: user.data, // Retorna os metadados
+      documentContent: user.documentContent, // Retorna o guia completo
     });
   } catch (error) {
-    console.error("Error fetching user:", error);
+    console.error(`Error fetching user data for ID: ${params.id}`, error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

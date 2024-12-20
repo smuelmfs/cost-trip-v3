@@ -8,16 +8,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { CheckSquare, List, MapPin, Plane, Info, Globe, AlertCircle } from 'lucide-react';
+import { CheckSquare, List, MapPin, Plane, Info, Globe, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Define the interface for document content
 interface TravelGuide {
-  itinerary: { 
-    dayTitle: string; 
-    morning: { activity: string; cost: number }[]; 
-    afternoon: { activity: string; cost: number }[]; 
-    evening: { activity: string; cost: number }[]; 
+  itinerary: {
+    dayTitle: string;
+    morning: { activity: string; cost: number }[];
+    afternoon: { activity: string; cost: number }[];
+    evening: { activity: string; cost: number }[];
   }[];
   practicalInfo: { sectionTitle: string; details: string[] }[];
   cultureEtiquette: { sectionTitle: string; details: string[] }[];
@@ -36,15 +36,19 @@ interface Activity {
   completed: boolean;
 }
 
-
 export default function DashboardPage({ params }: { params: { id: string } }) {
   const [travelGuide, setTravelGuide] = useState<TravelGuide | null>(null);
-  const [userData, setUserData] = useState<{ userName: string; destination: string; travelStyle: string } | null>(null);
+  const [userData, setUserData] = useState<{
+    userName: string;
+    destination: string;
+    travelStyle: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const router = useRouter();
+
   const [todos, setTodos] = useState<Todo[]>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`todos-${params.id}`);
       if (saved) return JSON.parse(saved);
     }
@@ -63,7 +67,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
   });
 
   const [activities, setActivities] = useState<Activity[]>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`activities-${params.id}`);
       if (saved) return JSON.parse(saved);
     }
@@ -85,46 +89,62 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
       const newTodos = prev.map((todo: Todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
       );
-      localStorage.setItem(`todos-${params.id}`, JSON.stringify(newTodos)); // Chave por usuário
+      localStorage.setItem(`todos-${params.id}`, JSON.stringify(newTodos));
       return newTodos;
     });
   };
-  
+
   const toggleActivity = (id: number) => {
     setActivities((prev: Activity[]) => {
       const newActivities = prev.map((activity: Activity) =>
         activity.id === id ? { ...activity, completed: !activity.completed } : activity
       );
-      localStorage.setItem(`activities-${params.id}`, JSON.stringify(newActivities)); // Chave por usuário
+      localStorage.setItem(`activities-${params.id}`, JSON.stringify(newActivities));
       return newActivities;
     });
-  };  
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log(`Fetching data for user ID: ${params.id}`);
         const response = await fetch(`/api/user/${params.id}`);
-        if (!response.ok) throw new Error("Failed to fetch user data");
+        console.log("Response status:", response.status);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user data: ${response.statusText}`);
+        }
+
         const data = await response.json();
+        console.log("Response data:", data);
+
+        if (!data.data || !data.documentContent) {
+          throw new Error("Invalid data structure received");
+        }
 
         setUserData({
           userName: data.data.userName,
           destination: data.data.destination,
-          travelStyle: data.data.travelStyle
+          travelStyle: data.data.travelStyle,
         });
-        setTravelGuide(JSON.parse(data.documentContent));
+        setTravelGuide(data.documentContent);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching user data:", error);
         router.push("/error");
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [params.id, router]);
 
   if (loading) return <div>Loading...</div>;
-  if (!travelGuide || !userData) return <div>No data available for this user.</div>;
+
+  if (!travelGuide || !userData) {
+    console.error("No travel guide or user data found.");
+    return <div>No data available for this user.</div>;
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -234,7 +254,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
       ) : (
         <Card className="w-full">
           <CardHeader className="p-4 md:p-6">
-            <CardTitle className="text-xl md:text-2xl">Seu guia de viagem</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">Seu guia de viagem:</CardTitle>
             <CardDescription className="text-sm md:text-base text-muted-foreground dark:text-gray-400">Tudo o que você precisa saber sobre a sua viagem está aqui!</CardDescription>
           </CardHeader>
           <CardContent className="p-1 md:p-6"> {/* Updated padding */}
