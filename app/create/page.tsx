@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plane, Users, Calendar } from "lucide-react";
+import { Plane, Users, Calendar } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import * as z from "zod";
@@ -87,10 +87,10 @@ export default function CreatePage() {
   return (
     <div className="relative flex items-center justify-center min-h-screen px-4 bg-gray-900">
       {/* Camada de Blur com ajuste */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-800/50 to-transparent blur-[120px]"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 opacity-75"></div>
 
       {/* Formulário Central */}
-      <Card className="relative w-full max-w-3xl shadow-2xl z-10 bg-card border border-gray-700">
+      <Card className="relative w-full max-w-4xl shadow-2xl z-10 bg-gray-800/90 border border-gray-700 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-3xl text-center font-bold text-white">
             Planeje Sua Viagem
@@ -100,12 +100,14 @@ export default function CreatePage() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="grid gap-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Informações Pessoais */}
-              <div>
-                <h3 className="text-lg font-bold mb-2 text-white">Informações Pessoais</h3>
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center">
+                  <Users className="mr-2" /> Informações Pessoais
+                </h3>
                 <Separator className="mb-4" />
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField
@@ -115,7 +117,7 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Seu Nome</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex.: João Silva" {...field} />
+                          <Input placeholder="Ex.: João Silva" {...field} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -128,7 +130,7 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Seu E-mail</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="Ex.: joao@email.com" {...field} />
+                          <Input type="email" placeholder="Ex.: joao@email.com" {...field} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -138,10 +140,12 @@ export default function CreatePage() {
               </div>
 
               {/* Detalhes da Viagem */}
-              <div>
-                <h3 className="text-lg font-bold mb-2 text-white">Detalhes da Viagem</h3>
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center">
+                  <Plane className="mr-2" /> Detalhes da Viagem
+                </h3>
                 <Separator className="mb-4" />
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-3">
                   <FormField
                     control={form.control}
                     name="destination"
@@ -149,7 +153,7 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Destino</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex.: País, Cidade" {...field} />
+                          <Input placeholder="Ex.: País, Cidade" {...field} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -162,7 +166,7 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Quantidade de Dias</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="Ex.: 7" {...field} />
+                          <Input type="number" placeholder="Ex.: 7" {...field} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -175,7 +179,7 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Quantidade de Pessoas</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="Ex.: 2" {...field} />
+                          <Input type="number" placeholder="Ex.: 2" {...field} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -185,8 +189,10 @@ export default function CreatePage() {
               </div>
 
               {/* Preferências */}
-              <div>
-                <h3 className="text-lg font-bold mb-2 text-white">Preferências</h3>
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white flex items-center">
+                  <Calendar className="mr-2" /> Preferências
+                </h3>
                 <Separator className="mb-4" />
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Estilo da Viagem */}
@@ -197,10 +203,10 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Estilo da Viagem</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out">
                             <SelectValue placeholder="Escolha um estilo" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-gray-800 border-gray-700 text-white">
                             <SelectItem value="Econômico">Econômico</SelectItem>
                             <SelectItem value="Conforto">Conforto</SelectItem>
                             <SelectItem value="Luxo">Luxo</SelectItem>
@@ -219,10 +225,10 @@ export default function CreatePage() {
                       <FormItem>
                         <FormLabel>Transporte Preferido</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out">
                             <SelectValue placeholder="Escolha uma opção" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-gray-800 border-gray-700 text-white">
                             <SelectItem value="Taxi">Táxi</SelectItem>
                             <SelectItem value="Public Transport">Transporte Público</SelectItem>
                             <SelectItem value="Car Rental">Aluguel de Carro</SelectItem>
@@ -240,12 +246,22 @@ export default function CreatePage() {
         </CardContent>
         <CardFooter>
           <Button
-            className="w-full"
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold py-2 px-4 rounded-md transition-all duration-200 ease-in-out transform hover:scale-105"
             type="submit"
             disabled={isLoading}
             onClick={form.handleSubmit(onSubmit)}
           >
-            {isLoading ? "Gerando..." : "Gerar meu guia"}
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Gerando...
+              </div>
+            ) : (
+              "Gerar meu guia"
+            )}
           </Button>
         </CardFooter>
       </Card>
